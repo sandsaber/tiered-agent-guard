@@ -4,7 +4,7 @@
 Approval artefacts, hash-chained audit, mechanical enforcement of permission
 boundaries.
 
-**Version 1.1.0** · License: [MIT-0](LICENSE) · [Security audit: 22 findings, 21 fixed, 1 accepted](SECURITY-AUDIT.md)
+**Version 1.1.0** · License: [MIT-0](LICENSE) · [Security audit: 23 findings, 22 fixed, 1 accepted](SECURITY-AUDIT.md)
 
 > This is a **policy framework**, not a classifier model. For classifier-based
 > prompt-injection defence see Llama Guard 3, ShieldGemma, or Granite Guardian.
@@ -67,7 +67,7 @@ You should NOT look at this framework if you want:
 - [x] **Secret-leak scanner.** Detects AWS, GitHub, OpenAI (`sk-*`), Anthropic (`sk-ant-*`), Stripe live, Slack (`xoxb/p/a/app`), Google API keys, JWT, OpenSSH/PGP/RSA private keys, and Bearer/Basic auth tokens anywhere in the tree.
 - [x] **Credential-path and file-name scanner.** Flags `.env`, `.ssh/`, `.aws/`, `.credentials/`, `.netrc`, `.docker/`, `.gnupg/`, `.git-credentials`, `*.pem`, `*.p12`, `id_rsa`, `serviceAccountKey.json`, `secrets.yml` inside the workspace.
 - [x] **macOS ACL check.** Catches world-writable grants set via ACL (invisible to POSIX-mode checks).
-- [x] **64 unit tests.** All eight enforcement vectors from `references/trust-tiers.md`, plus obfuscation-bypass regression (F-21, F-22: `r''m`, `p\ip install`, `bash -lc`, `perl -pe`, etc.), workspace escape (`..`), locked adapter files, approval hygiene (expiry, consumed, TOCTOU, subject mismatch).
+- [x] **72 unit tests.** All eight enforcement vectors from `references/trust-tiers.md`, plus obfuscation-bypass regression (F-21, F-22: `r''m`, `p\ip install`, `bash -lc`, `perl -pe`, etc.), shell allowlist regression (F-23), workspace escape (`..`), locked adapter files, approval hygiene (expiry, consumed, TOCTOU, subject mismatch).
 
 ### Integration paths
 
@@ -130,7 +130,7 @@ unapproved side effect.
 | All policy + operating files | Path to workspace root |
 | Five shell scripts, chmod +x | Claude Code hooks or equivalent pre/post-tool-use wrapper |
 | Python reference hooks (`spa_hooks/`) | Import / subprocess call from your runtime |
-| 64 passing unit tests | Optional: integrate into your CI |
+| 72 passing unit tests | Optional: integrate into your CI |
 | POLICY-APPROVED + SCRIPT-APPROVED pins for v1.1.0 | Re-approve after any edit (via `scripts/approve-proposal.sh`) |
 
 ---
@@ -200,10 +200,10 @@ detection, and verify-before-reporting.
   comes from the direct human channel only), heuristic screening, and
   tier escalation when a trigger traces back to external content.
 - **Reference runtime implementation** in Python (`spa_hooks/`) with
-  64 passing unit tests covering the enforcement vectors from
+  72 passing unit tests covering the enforcement vectors from
   `references/trust-tiers.md`.
-- **Self-audited.** 22 security findings were discovered and addressed
-  (21 fixed, 1 accepted as smoke-test). See
+- **Self-audited.** 23 security findings were discovered and addressed
+  (22 fixed, 1 accepted as smoke-test). See
   [`SECURITY-AUDIT.md`](SECURITY-AUDIT.md).
 
 ---
@@ -216,7 +216,7 @@ detection, and verify-before-reporting.
 ├── SKILL.md                    OpenClaw-compatible universal entry point
 ├── POLICY.md                   Canonical security policy (locked)
 ├── README.md                   This file
-├── SECURITY-AUDIT.md           Full audit report: 22 findings, status, fixes
+├── SECURITY-AUDIT.md           Full audit report: 23 findings, status, fixes
 │
 ├── assets/
 │   ├── SOUL.md                 Identity, principles, boundaries (locked)
@@ -258,7 +258,7 @@ detection, and verify-before-reporting.
     ├── approvals.py            ApprovalRecord, TOCTOU guard, single_use
     ├── README.md
     └── tests/
-        └── test_vectors.py     64 unit tests (V1–V8 + obfuscation + hygiene)
+        └── test_vectors.py     72 unit tests (V1–V8 + obfuscation + hygiene)
 ```
 
 ---
@@ -279,7 +279,7 @@ cp -r assets/*.md assets/memory ~/my-agent-workspace/
 # 3. Sanity-check the framework
 ./scripts/security-audit.sh    # exits 0 on a clean framework state
 ./scripts/verify-policy.sh     # exits 0 on a clean framework state
-python3 -m unittest spa_hooks.tests.test_vectors    # 64 tests, all green
+python3 -m unittest spa_hooks.tests.test_vectors    # 72 tests, all green
 
 # 4. Wire the hooks into your runtime (see "Integration paths" above)
 ```
@@ -549,8 +549,8 @@ The audit document includes reproducible harnesses for:
 
 ## Audit state
 
-**22 findings total. 21 fixed, 1 accepted as smoke-test.**
-All 3 critical and all 6 high-severity findings closed.
+**23 findings total. 22 fixed, 1 accepted as smoke-test.**
+All 3 critical and all 8 high-severity findings closed.
 
 Chronology (full detail in [`SECURITY-AUDIT.md`](SECURITY-AUDIT.md)):
 
@@ -562,13 +562,14 @@ Chronology (full detail in [`SECURITY-AUDIT.md`](SECURITY-AUDIT.md)):
 | Strategy C (enforcement) | onboarding validation, injection pre-read, SOUL reconciliation, Python reference impl | F-08, F-09, F-13, F-20 (+ F-14 accepted) |
 | Self-re-audit 1 | Review of new code | F-21 discovered and fixed (shlex tokenisation) |
 | Self-re-audit 2 | Review of F-21 fix | F-22 discovered and fixed (compressed interpreter flags) |
+| Self-re-audit 3 | Review of hook allowlist semantics | F-23 discovered and fixed (denylist-only shell classification) |
 
 Live state after the last run:
 
 - `security-audit.sh`: exit 0, 0 findings, 0 warnings
 - `verify-policy.sh`: exit 0, 0 findings, 0 warnings
-- `python3 -m unittest spa_hooks.tests.test_vectors`: 64 tests, all green
-- `AUDIT-LOG.md`: 37+ chained entries, integrity verified
+- `python3 -m unittest spa_hooks.tests.test_vectors`: 72 tests, all green
+- `AUDIT-LOG.md`: 71+ chained entries, integrity verified
 - Drift check: all 8 tracked files match their `POLICY-APPROVED` /
   `SCRIPT-APPROVED` pins
 
@@ -594,8 +595,7 @@ for audit purposes.
 **Security-audit methodology.** See
 [`SECURITY-AUDIT.md`](SECURITY-AUDIT.md) for the full audit trail.
 Two things we would recommend to any downstream maintainer: (1) run
-a self-re-audit after every significant new-code phase — F-21 and
-F-22 were discovered this way and existed in the framework for under an
-hour each; (2) trust mechanical enforcement over prose — every finding
-that reached production was prose-only; every finding caught early
-was backed by scripts or tests.
+a self-re-audit after every significant new-code phase — F-21, F-22, and
+F-23 were discovered this way; (2) trust mechanical enforcement over prose
+and back runtime hooks with behavioral tests, because the highest-impact
+findings were gaps between the policy contract and executable checks.

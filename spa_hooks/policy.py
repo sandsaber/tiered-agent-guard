@@ -77,6 +77,90 @@ READ_TOOLS = {"read_file", "list_files", "grep"}
 WRITE_TOOLS = {"write_file", "edit_file"}
 SHELL_TOOLS = {"bash", "shell", "run_command"}
 
+SIMPLE_TIER1_COMMANDS = {
+    "ls",
+    "stat",
+    "file",
+    "wc",
+    "head",
+    "tail",
+    "cat",
+    "less",
+    "cut",
+    "awk",
+    "grep",
+    "rg",
+    "fd",
+    "tree",
+    "column",
+    "sort",
+    "uniq",
+    "tr",
+    "date",
+    "basename",
+    "dirname",
+    "realpath",
+    "readlink",
+    "diff",
+    "comm",
+    "md5sum",
+    "sha256sum",
+    "pwd",
+    "whoami",
+    "pytest",
+    "jest",
+    "vitest",
+    "mocha",
+    "mypy",
+    "pylint",
+    "shellcheck",
+}
+
+PROJECT_SCRIPT_COMMANDS = {
+    "./scripts/security-audit.sh",
+    "scripts/security-audit.sh",
+    "./scripts/verify-policy.sh",
+    "scripts/verify-policy.sh",
+    "./scripts/audit-log-append.sh",
+    "scripts/audit-log-append.sh",
+    "./scripts/injection-scan.sh",
+    "scripts/injection-scan.sh",
+}
+
+GIT_TIER1_SUBCOMMANDS = {
+    "status",
+    "log",
+    "show",
+    "diff",
+    "blame",
+    "rev-parse",
+    "shortlog",
+    "reflog",
+}
+
+SECRET_PATH_MARKERS = (
+    ".credentials",
+    ".ssh",
+    ".aws",
+    ".kube",
+    ".config/gcloud",
+    ".env",
+    ".npmrc",
+    ".pypirc",
+    ".netrc",
+    ".docker",
+    ".gnupg",
+    ".git-credentials",
+    ".pgpass",
+    "id_rsa",
+    "id_ed25519",
+    "id_ecdsa",
+    "id_dsa",
+    "serviceaccountkey.json",
+    "secrets.yml",
+    "secrets.yaml",
+)
+
 
 def _tokenize_command(cmd: str) -> List[str]:
     """Return shell-evaluated tokens from cmd across separators.
@@ -99,6 +183,170 @@ def _tokenize_command(cmd: str) -> List[str]:
     return tokens
 
 
+def _command_segments(cmd: str) -> List[List[str]]:
+    segments: List[List[str]] = []
+    for part in re.split(r"[|;&]+", cmd):
+        if not part.strip():
+            continue
+        try:
+            tokens = shlex.split(part, posix=True)
+        except ValueError:
+            tokens = part.split()
+        if tokens:
+            segments.append(tokens)
+    return segments
+
+
+def _has_redirection(tokens: List[str]) -> bool:
+    for token in tokens:
+        if token in {">", ">>", "<", "<<", "<>", "&>"}:
+            return True
+        if re.match(r"^[0-9]*(?:>>?|<<?|&>)", token):
+            return True
+    return False
+
+
+def _is_filtered_env_pipeline(segments: List[List[str]]) -> bool:
+    if len(segments) != 2:
+        return False
+    first, second = segments
+    if first != ["env"] or not second or second[0] != "grep":
+        return False
+    joined = " ".join(second[1:]).lower()
+    if "-ive" not in joined.replace(" ", ""):
+        return False
+    return any(
+        word in joined
+        for word in (
+            "token",
+            "key",
+            "secret",
+            "pass",
+            "credential",
+            "auth",
+            "bearer",
+            "session",
+            "cookie",
+            "private",
+            "cert",
+            "oauth",
+            "refresh",
+        )
+    )
+
+
+def _git_command_is_allowlisted(tokens: List[str]) -> bool:
+    if len(tokens) < 2:
+        return False
+    subcommand = tokens[1]
+    if subcommand in GIT_TIER1_SUBCOMMANDS:
+        return True
+    if subcommand == "branch":
+        return "--list" in tokens[2:]
+    if subcommand == "remote":
+        return tokens[2:] == ["-v"]
+    if subcommand == "config":
+        return len(tokens) >= 4 and tokens[2] == "--get"
+    if subcommand == "stash":
+        return tokens[2:] == ["list"]
+    if subcommand == "worktree":
+        return tokens[2:] == ["list"]
+    return False
+
+
+def _shell_segment_is_allowlisted(tokens: List[str]) -> bool:
+    if not tokens or _has_redirection(tokens):
+        return False
+
+    command = tokens[0]
+    if (
+        "/" in command
+        and command not in PROJECT_SCRIPT_COMMANDS
+        and command != "./gradlew"
+    ):
+        return False
+
+    if command in PROJECT_SCRIPT_COMMANDS:
+        return True
+    if command in {"./scripts/approve-proposal.sh", "scripts/approve-proposal.sh"}:
+        return False
+    if command in SIMPLE_TIER1_COMMANDS:
+        return True
+    if command == "sed":
+        return len(tokens) >= 2 and tokens[1] == "-n"
+    if command == "find":
+        return "-type" in tokens and "f" in tokens and "-exec" not in tokens
+    if command == "git":
+        return _git_command_is_allowlisted(tokens)
+    if command in {"go", "cargo", "mvn"}:
+        return len(tokens) >= 2 and tokens[1] == "test"
+    if command in {"python", "python3"}:
+        return len(tokens) >= 3 and tokens[1:3] == ["-m", "unittest"]
+    if command == "./gradlew":
+        return len(tokens) >= 2 and tokens[1] == "test"
+    if command == "make":
+        return True
+    if command == "tsc":
+        return "--noEmit" in tokens[1:]
+    if command == "ruff":
+        return "--fix" not in tokens[1:]
+    if command == "eslint":
+        return "--fix" not in tokens[1:]
+    if command == "prettier":
+        return "--check" in tokens[1:]
+    if command == "gofmt":
+        return "-l" in tokens[1:]
+    if command in {"mkdir", "cp", "mv", "touch"}:
+        if command == "mkdir":
+            return "-p" in tokens[1:]
+        return len(tokens) >= 2
+    return False
+
+
+def _shell_command_is_allowlisted(cmd: str) -> bool:
+    segments = _command_segments(cmd)
+    if not segments:
+        return False
+    if _is_filtered_env_pipeline(segments):
+        return True
+    return all(_shell_segment_is_allowlisted(segment) for segment in segments)
+
+
+def _is_path_like_token(token: str) -> bool:
+    return token.startswith(("/", "~", ".", "..")) or "/" in token
+
+
+def _looks_like_secret_path(token: str) -> bool:
+    lower = token.lower()
+    return any(marker in lower for marker in SECRET_PATH_MARKERS)
+
+
+def _shell_has_static_path_risk(cmd: str) -> bool:
+    for tokens in _command_segments(cmd):
+        for token in tokens:
+            if token.startswith("-"):
+                continue
+            if _looks_like_secret_path(token):
+                return True
+            if token.startswith(("/", "~", "..")) or "/../" in token:
+                return True
+    return False
+
+
+def _shell_paths_stay_inside_workspace(cmd: str, workspace_root: str) -> bool:
+    for tokens in _command_segments(cmd):
+        for token in tokens:
+            if token.startswith("-"):
+                continue
+            if _looks_like_secret_path(token):
+                return False
+            if _is_path_like_token(token):
+                expanded = os.path.expanduser(token)
+                if not is_inside_workspace(expanded, workspace_root):
+                    return False
+    return True
+
+
 def classify_tier(tool_name: str, args: dict) -> int:
     """Map (tool, args) to a tier. Default Tier 2 when in doubt (PD-6)."""
     if tool_name in SHELL_TOOLS:
@@ -107,7 +355,11 @@ def classify_tier(tool_name: str, args: dict) -> int:
         for pat in BLOCKED_COMMAND_PATTERNS:
             if re.search(pat, cmd) or re.search(pat, joined_tokens):
                 return TIER_2
-        return TIER_1
+        if _shell_has_static_path_risk(cmd):
+            return TIER_2
+        if _shell_command_is_allowlisted(cmd):
+            return TIER_1
+        return TIER_2
     if tool_name in WRITE_TOOLS:
         path = args.get("path", "")
         if _is_locked_path(path):
@@ -156,6 +408,14 @@ def approve_or_deny(
         path = args.get("path", "")
         if path and not is_inside_workspace(path, workspace_root):
             return (False, f"path outside workspace: {path}", None)
+    if tool_name in SHELL_TOOLS:
+        cmd = args.get("command", "")
+        if not _shell_paths_stay_inside_workspace(cmd, workspace_root):
+            return (
+                False,
+                f"shell command references path outside workspace or credential path: {cmd}",
+                None,
+            )
 
     tier = classify_tier(tool_name, args)
     if tier == TIER_0:

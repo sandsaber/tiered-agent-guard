@@ -77,10 +77,12 @@ that Codex loads as repository guidance. That adapter is useful but not a hard
 pre-tool hook by itself. Use Codex sandbox approvals or a proxy that calls
 `spa_hooks.approve_or_deny(...)` when you need mechanical enforcement.
 
-### Pre-tool-use hook — reject outbound network by default
+### Pre-tool-use hook — enforce the Tier 1 shell allowlist
 
 ```python
 # Pseudocode; adapt to your hook API.
+import re, shlex
+
 BLOCKED_COMMAND_PATTERNS = [
     # Network
     r"\bcurl\b", r"\bwget\b", r"\bssh\b", r"\bscp\b", r"\brsync\b",
@@ -122,6 +124,27 @@ def tokenize_command(cmd):
         except ValueError:
             tokens.extend(part.split())
     return tokens
+
+# F-23: this hook is an allowlist, not just a denylist. A command that does
+# not match BLOCKED_COMMAND_PATTERNS is still Tier 2 unless every shell segment
+# is one of POLICY.md §2.2's approved Tier 1 command forms. In particular:
+# - `git` is read-only only (`status`, `log`, `show`, `diff`, `blame`, etc.).
+# - `sed` must be `sed -n`; edit forms like `sed -i` are Tier 2.
+# - `find` must include `-type f` and must not include `-exec` / `-delete`.
+# - project scripts are limited to the SCRIPT-APPROVED scripts in §2.2.
+# - redirection and unknown commands such as `chmod`, `tee`, `git commit`,
+#   or bare `env` are Tier 2 by default.
+# - any static shell path outside the workspace, or any credential-looking
+#   path such as `.ssh`, `.env`, `.aws`, or `.git-credentials`, is denied.
+def shell_command_is_allowlisted(cmd, workspace_root):
+    """Return True only for command forms explicitly listed in POLICY.md §2.2.
+
+    Production integrations can call `spa_hooks.approve_or_deny(...)` instead
+    of reimplementing this reference logic. If reimplemented, parse shell
+    segments with shlex, reject redirection, validate path arguments against
+    `workspace_root`, and default unknown commands to Tier 2.
+    """
+    ...
 
 APPROVALS_DIR = "assets/approvals"   # *.approved files, not PROPOSALS.md flags
 PROPOSALS_FILE = "assets/PROPOSALS.md"
@@ -169,16 +192,22 @@ def pre_tool_use(tool_name, args, context):
     if tool_name in ("bash", "shell", "run_command"):
         cmd = args.get("command", "")
         joined_tokens = " ".join(tokenize_command(cmd))
+        tier2_reason = None
         for pattern in BLOCKED_COMMAND_PATTERNS:
             if re.search(pattern, cmd) or re.search(pattern, joined_tokens):
-                rec = find_matching_approval(cmd)
-                if not rec:
-                    return DENY(
-                        reason=f"Tier 2 command without valid approval: {cmd}",
-                        remediation="file a proposal, then run scripts/approve-proposal.sh",
-                    )
-                context["pending_consume"] = rec
+                tier2_reason = f"blocked Tier 2 command pattern: {pattern}"
                 break
+        if tier2_reason is None and not shell_command_is_allowlisted(cmd, context["workspace_root"]):
+            tier2_reason = "command is not in POLICY.md §2.2 Tier 1 allowlist"
+
+        if tier2_reason is not None:
+            rec = find_matching_approval(cmd)
+            if not rec:
+                return DENY(
+                    reason=f"Tier 2 command without valid approval: {cmd} ({tier2_reason})",
+                    remediation="file a proposal, then run scripts/approve-proposal.sh",
+                )
+            context["pending_consume"] = rec
 
     if tool_name in ("write_file", "edit_file"):
         path = args.get("path", "")

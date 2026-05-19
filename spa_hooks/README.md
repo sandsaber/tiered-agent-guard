@@ -16,9 +16,9 @@ the runtime hooks.
 | File | Purpose |
 |---|---|
 | `__init__.py` | Public API |
-| `policy.py` | `classify_tier`, `is_inside_workspace`, `approve_or_deny` |
+| `policy.py` | `classify_tier`, shell allowlist enforcement, workspace path guard, `approve_or_deny` |
 | `approvals.py` | `ApprovalRecord`, `find_matching_approval`, TOCTOU guard |
-| `tests/test_vectors.py` | 8 enforcement vectors from `trust-tiers.md` + hygiene |
+| `tests/test_vectors.py` | 72 tests: 8 enforcement vectors from `trust-tiers.md`, approval hygiene, obfuscation, allowlist, and shell path guards |
 
 ## Running tests
 
@@ -28,7 +28,7 @@ From the repo root:
 python3 -m unittest spa_hooks.tests.test_vectors -v
 ```
 
-All tests must pass on a clean framework state.
+All 72 tests must pass on a clean framework state. Shell tests intentionally cover both blocked patterns and positive Tier 1 allowlist cases, because unknown local commands must default to Tier 2.
 
 ## Integration (Codex / Claude Code / Anthropic SDK)
 

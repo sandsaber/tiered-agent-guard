@@ -1,8 +1,8 @@
 # SECURITY-AUDIT.md — Tiered Agent Guard Security Audit
 
-**Status:** Strategies A–C complete + F-21 (discovered via self-re-audit) fixed. 21/21 findings closed or explicitly accepted.
+**Status:** Strategies A–C complete + F-21/F-22/F-23 self-re-audit findings fixed. 23/23 findings closed or explicitly accepted.
 **Started:** 2026-04-22
-**Last updated:** 2026-04-22 (F-21 shell-quoting bypass fixed; 56 passing tests)
+**Last updated:** 2026-05-19 (F-23 denylist-only shell classification fixed; 72 passing tests)
 **Auditor:** Claude (Opus 4.7, interactive session)
 **Target version:** framework as of 2026-04-22, before any patches
 **Target platform:** darwin / macOS (per environment)
@@ -19,7 +19,7 @@ during the rebrand.*
 - **Section 1** — executive summary. Read first.
 - **Section 2** — idea of the project, so future-you understands what not to break.
 - **Section 3** — findings table (one-line status per finding).
-- **Section 4** — findings in detail (F-01…F-20).
+- **Section 4** — findings in detail (F-01…F-23).
 - **Section 5** — fix strategies (A / B / C) with acceptance criteria.
 - **Section 6** — progress tracker (what's done, what's open).
 - **Section 7** — next actions (do this next).
@@ -34,11 +34,11 @@ When resuming: read 1, 3, 6, 7, 8 — that's enough context to restart in ~2 min
 
 Tiered Agent Guard is a runtime-agnostic policy framework that turns an LLM agent into a proactive agent bounded by a three-tier trust model (Tier 0 ambient / Tier 1 logged / Tier 2 approval-required). Design is conceptually sound — STRIDE threat model covered, three-layer prompt-injection defense, Prime Directives as override, output-bound proactivity. The problem is that declarations outrun enforcement.
 
-**Twenty findings total.** Three critical, five high, seven medium, five low. All three critical (F-01, F-02, F-03) are gaps between policy declaration and mechanical enforcement — drift detection is broken, approval state is writable by the agent itself, and the append-only audit log is not actually append-only.
+**Twenty-three findings total.** Three critical, eight high, seven medium, five low. All three critical (F-01, F-02, F-03) were gaps between policy declaration and mechanical enforcement. The later high-severity self-audit findings (F-21, F-22, F-23) were runtime-hook enforcement gaps found after the reference implementation landed.
 
 **All findings are implementation-level, not design-level.** The core idea does not need changing. Strategy A (1–2h of script fixes) closes 8 findings without touching any policy file. Strategy B (half-day, adds approval tokens + expiration + hash-chain) closes the three critical ones. Strategy C (1–2 days, reference hook implementation) makes the runtime enforce what POLICY.md promises.
 
-**Built-in checks pass clean today** (`security-audit.sh` exit 0, `verify-policy.sh` exit 0), which is misleading: both scripts have bugs that let real issues through.
+**Built-in checks pass clean today** (`security-audit.sh` exit 0, `verify-policy.sh` exit 0, `python3 -m unittest spa_hooks.tests.test_vectors -v` passes 72 tests). Earlier audit waves documented where clean script output was misleading before the fixes landed.
 
 ---
 
@@ -94,6 +94,7 @@ Status: `open` / `in-progress` / `fixed` / `accepted-risk` / `wontfix`.
 | F-20 | LOW  | Example entries in surprise-queue.md have placeholder dates  | assets/memory/surprise-queue.md:40-58         | **fixed** (wrapped in HTML comment) |
 | F-21 | HIGH | Shell quote/escape obfuscation bypasses BLOCKED_COMMAND_PATTERNS | spa_hooks/policy.py + references/trust-tiers.md | **fixed** (shlex tokenize) |
 | F-22 | HIGH | Combined interpreter flags (bash -lc, perl -pe) bypass F-21 fix | spa_hooks/policy.py interpreter patterns | **fixed** (`[^|;&\n]*?\s-[a-zA-Z]*c\b`) |
+| F-23 | HIGH | Shell hook used denylist fallback instead of POLICY.md allowlist | spa_hooks/policy.py classify_tier | **fixed** (allowlist + path guard) |
 
 ---
 
@@ -367,6 +368,75 @@ re-audit; would have shipped silently otherwise.
 
 ---
 
+### F-22 — Combined interpreter flags bypass F-21 fix  [HIGH]
+
+**Files:** `spa_hooks/policy.py:BLOCKED_COMMAND_PATTERNS`, `spa_hooks/tests/test_vectors.py::ObfuscationBypass`
+
+**Discovery:** self-re-audit after the F-21 patch, 2026-04-22.
+
+**Problem:** the first F-21 patch covered obvious interpreter code-execution
+forms such as `bash -c` and `python3 -c`, but compressed or combined flags
+could still pass if the regex expected the code flag too literally. Examples:
+
+```bash
+bash -lc 'cmd'
+sh -xvc 'cmd'
+bash --rcfile=/dev/null -lc 'cmd'
+perl -pe 'script_that_could_do_anything'
+```
+
+**Impact:** command strings that launch an interpreter with inline code are
+Tier 2 by policy. Combined flags are normal shell syntax, so a hook that misses
+them creates a practical bypass rather than an academic parser edge case.
+
+**Fix:** interpreter regexes now allow intermediate options and compressed flag
+sets, for example `[^|;&\n]*?\s-[a-zA-Z]*c\b` for shell `-c` forms and
+matching variants for Perl/Ruby/Node/Awk code flags.
+
+**Verification:** the `ObfuscationBypass` suite includes compressed shell and
+Perl flag vectors and keeps known-legitimate `ls`, `grep`, and `git status`
+positive cases passing.
+
+---
+
+### F-23 — Shell hook used denylist fallback instead of POLICY.md allowlist  [HIGH]
+
+**Files:** `spa_hooks/policy.py:classify_tier`, `references/trust-tiers.md §Pre-tool-use hook`
+
+**Discovery:** security audit on 2026-05-19.
+
+**Problem:** `POLICY.md §2.2` defines Tier 1 shell execution as an allowlist:
+only named command forms are allowed after logging; everything else is Tier 2.
+The Python reference hook enforced the Tier 2 denylist first, then returned
+Tier 1 for any shell command that did not match a blocked pattern. These probes
+were wrongly allowed or classified too low:
+
+```text
+cat /etc/passwd                 -> Tier 1 logged
+git commit -m x                 -> Tier 1 logged
+chmod 777 assets/AUDIT-LOG.md   -> Tier 1 logged
+tee assets/PROPOSALS.md         -> Tier 1 logged
+```
+
+**Impact:** an integration using `spa_hooks.approve_or_deny(...)` could permit
+non-allowlisted local commands without a Tier 2 approval. This breaks the
+runtime contract even when the obvious network/delete/install patterns are
+blocked.
+
+**Fix:** `classify_tier` now defaults shell commands to Tier 2 unless every
+shell segment matches a Tier 1 command form from `POLICY.md §2.2`. The hook
+also rejects static shell paths outside the workspace and credential-looking
+paths such as `.ssh`, `.env`, `.aws`, `.git-credentials`, and common private
+key names. Known-good audit/test forms (`./scripts/security-audit.sh`,
+`./scripts/verify-policy.sh`, `python3 -m unittest ...`) remain Tier 1.
+
+**Verification:** added 8 regression tests covering non-allowlisted commands,
+workspace path escapes, credential-looking shell paths, and positive allowlist
+cases. Current total: **72 tests passing**. The original manual probes now
+return Tier 2 or a direct denial before execution.
+
+---
+
 ## 5. Fix strategies
 
 Three strategies, composable. Recommended order: A → B → C. Effort estimates assume one focused session.
@@ -550,32 +620,36 @@ Update whenever a fix lands. Format: `[YYYY-MM-DD] <fix-id> — <short outcome>`
   - Summary: **15 of 20 findings closed**; all 3 critical closed; 4 of 5 high closed (F-08 remains).
 - [2026-04-22] Strategy C landed (C1–C4) + F-14 annotation + F-20 wrap. Closed F-08, F-09, F-13, F-20; F-14 accepted with annotation. New artifacts: `scripts/injection-scan.sh` (high/medium-confidence markers, sweep + quarantine modes), `spa_hooks/` Python reference implementation (policy.py, approvals.py, tests/test_vectors.py with 36 passing unit tests covering all 8 enforcement vectors + hygiene). `ONBOARDING.md` gained Step 1.5 (validate answers: injection scan + 200-char cap + forbid-list guard) and Step 2.5 (readback before save). `HEARTBEAT.md §6` rewritten (pre-read hook preferred, daily sweep = fallback). `SOUL.md §Boundaries` reworded from absolute to conditional, pointing at POLICY §7 + §11 approval channel. `verify-policy.sh §3` header annotated as smoke-test only. `surprise-queue.md` example block wrapped in HTML comment. After re-approval of changed files, `security-audit.sh` tracks 8 files all `matches last approved`; `verify-policy.sh §5` reports chain verified across all entries. 36 Python tests pass.
   - Summary: **20 of 20 findings addressed** — 19 fixed, 1 (F-14) explicitly accepted with a smoke-test annotation. All 3 critical and all 5 high closed.
+- [2026-05-19] Security audit found F-23: `spa_hooks` shell classification was denylist-first and allowed unknown local commands as Tier 1. Fixed with explicit POLICY.md §2.2 allowlist enforcement plus shell path/credential guards. Added 8 regression tests; total suite is now 72 tests. `security-audit.sh` and `verify-policy.sh` both exit 0 on the final state.
+  - Summary: **23 of 23 findings addressed** — 22 fixed, 1 (F-14) explicitly accepted. All 3 critical and all 8 high closed.
 
 ---
 
 ## 7. Next actions (do this next)
 
-Pick one thread at a time. Recommended: top-down.
+Current state: no open findings from this audit series. Before release or a
+public claim, rerun the verification bundle from §9 and make sure the output
+matches the current code, not this document's historical notes.
 
-**Right now (Strategies A and B complete):**
-1. Decide whether to start Strategy C. Largest remaining items:
-   - **F-08** (HIGH) — onboarding accepts unvalidated free-form input. Fix-C3 adds length caps + injection-marker screen + read-back confirmation. Low risk, concrete.
-   - **F-13** (MED) — SOUL.md vs POLICY.md self-mod inconsistency. Fix-C4 is a small SOUL edit.
-   - **F-09** (MED) — injection sweep 24h window. Fix-C2 requires pre-read hook infrastructure (runtime-dependent; start with documenting the contract).
-2. Decide whether to start **fix-C1** (working hook implementation package `spa_hooks/`). This is the single biggest lever: it converts all the prose enforcement in POLICY.md and `references/trust-tiers.md` into mechanical guards. Estimated 1–2 days.
+**Release gate:**
+1. `./scripts/security-audit.sh`
+2. `./scripts/verify-policy.sh`
+3. `python3 -m unittest spa_hooks.tests.test_vectors -v`
+4. Manual hook probe for at least one unknown command, one outside-workspace
+   shell path, one approved Tier 1 command, and one Tier 2 command with no
+   approval artefact.
 
-**Quick wins still possible:**
-- F-20 (cosmetic) — wrap `surprise-queue.md` examples in HTML comment.
-- F-14 (medium, accept-risk) — formally annotate `verify-policy.sh §3` forbidden-string check as a smoke-test only, not a security gate.
-
-**Strategy-C-optional path:**
-- Keep this framework as a "design + reference scripts" package, and leave runtime hook implementation to downstream users. In that case, the remaining findings become documentation notes rather than code.
+**Policy-drift rule:** if any locked file changes (`POLICY.md`, `SKILL.md`, any
+`AGENTS.md`, `assets/SOUL.md`, or `scripts/*.sh`), record the new approved SHA
+before expecting audit scripts to pass. The 2026-05-19 F-23 fix intentionally
+changed only `spa_hooks/` and documentation, so no locked-file reapproval was
+required.
 
 **Stop rules:**
-- If at any point a fix requires disabling a load-bearing invariant from §2 — stop, reopen the design discussion, do not proceed.
-- If `security-audit.sh` exits non-zero after a fix — do not accept the fix; the regression is the fix's own output.
-
----
+- If a fix requires disabling a load-bearing invariant from §2, stop and reopen
+  the design discussion.
+- If `security-audit.sh`, `verify-policy.sh`, or the unit suite exits non-zero
+  after a fix, do not accept the fix until the regression is explained.
 
 ## 8. Continuation notes (how to resume cold)
 
@@ -761,6 +835,9 @@ Result:
 - **2026-04-22 (v3)** — Strategy B landed. New artifacts: `scripts/audit-log-append.sh` (hash-chain helper, F-03), `scripts/approve-proposal.sh` (TTY-gated approval, F-02/F-07), `assets/approvals/` (Tier-2-only write directory, F-02), `assets/approvals/README.md`. POLICY.md extended: §2.2 "Project-local scripts" (F-04), §11 "Approval Artifacts" (full approval-token mechanism). HEARTBEAT.md §7 extended + §8 proposal-expiration added (F-11). trust-tiers.md pseudocode rewritten for directory-based approvals with TOCTOU guard and single_use consumption. Opportunistic fixes: F-12 (env grep case-insensitive), F-15 (find -readable → portable `find -type f`), F-16 (rm family expanded to cover rmdir/unlink/shred/trash/-delete). All tracked files pinned via POLICY-APPROVED / SCRIPT-APPROVED entries; audit log now chained (17 entries OK); tamper detection functionally verified. **15 of 20 findings closed (3/3 critical, 4/5 high).** Remaining: F-08, F-09, F-13 (Strategy C), F-14 (accept as smoke-test), F-20 (cosmetic).
 - **2026-04-22 (v4)** — Strategy C landed. Closed F-08 (ONBOARDING Step 1.5 validate + Step 2.5 readback), F-09 (pre-read injection hook via `scripts/injection-scan.sh` + HEARTBEAT §6 rewrite), F-13 (SOUL.md conditional edit pointing at POLICY §7/§11), F-20 (surprise-queue example wrap). F-14 accepted with explicit smoke-test annotation in `verify-policy.sh §3`. **C1 reference implementation landed**: `spa_hooks/` (policy.py, approvals.py, tests/test_vectors.py, README.md) — 36 unit tests pass covering all enforcement vectors from `trust-tiers.md` + deletion/network families + workspace guards + approval hygiene (expiry/consumed/TOCTOU/subject). **20 of 20 findings addressed — 19 fixed, 1 accepted.** All 3 critical, all 5 high closed.
 - **2026-04-22 (v5)** — Self-re-audit of v4 new code surface discovered **F-21** (HIGH): `\brm\b`-style regex trivially bypassed by shell-quote obfuscation (`r''m`, `r\m`, `"rm"`, `p\ip install`). Fixed with shlex tokenization in `spa_hooks/policy.py::_tokenize_command` — patterns now match against both raw cmd and `' '.join(tokens)`. Extended `BLOCKED_COMMAND_PATTERNS` with code-execution surface (eval, exec, source, interpreter `-c/-e` forms). `references/trust-tiers.md` pseudocode updated to match. Added 20 regression tests (`ObfuscationBypass` class) covering obfuscated forms of rm/pip/npm + eval/exec/source/bash-c/python-c/perl-e + sanity tests that legit commands still pass. **Total: 56 tests passing, 21/21 findings addressed (20 fixed, 1 accepted).**
+
+- **2026-04-22 (v5b)** — Self-re-audit of the F-21 patch discovered **F-22** (HIGH): combined interpreter flags (`bash -lc`, `sh -xvc`, `perl -pe`, etc.) bypassed the initial interpreter patterns. Fixed by allowing intermediate options and compressed flag sets in interpreter regexes. Regression tests added for compressed shell and Perl forms.
+- **2026-05-19 (v6)** — Security audit discovered **F-23** (HIGH): `spa_hooks` shell classification treated any command not matching `BLOCKED_COMMAND_PATTERNS` as Tier 1, instead of enforcing POLICY.md §2.2 as an allowlist. Fixed with explicit shell allowlist logic, static shell path guards for outside-workspace and credential-looking paths, and documentation updates to the runtime hook template. Added 8 regression tests for unknown commands (`git commit`, `chmod`, `tee`, `sed -i`, bare `env`), outside-workspace shell paths, credential-looking paths, and positive allowlist cases. **Total: 72 tests passing, 23/23 findings addressed (22 fixed, 1 accepted).**
 
 ---
 

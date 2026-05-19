@@ -218,8 +218,79 @@ class TierClassification(unittest.TestCase):
             classify_tier("write_file", {"path": "assets/USER.md"}), TIER_1
         )
 
+
+    def test_policy_audit_scripts_are_tier_1(self):
+        self.assertEqual(
+            classify_tier("bash", {"command": "./scripts/security-audit.sh"}),
+            TIER_1,
+        )
+        self.assertEqual(
+            classify_tier("bash", {"command": "./scripts/verify-policy.sh"}),
+            TIER_1,
+        )
+
+    def test_python_unittest_command_is_tier_1(self):
+        self.assertEqual(
+            classify_tier(
+                "bash",
+                {"command": "python3 -m unittest spa_hooks.tests.test_vectors -v"},
+            ),
+            TIER_1,
+        )
+
+    def test_non_allowlisted_shell_commands_default_tier_2(self):
+        for cmd in (
+            "cat /etc/passwd",
+            "cat ~/.ssh/id_rsa",
+            "cat ../outside",
+            "git commit -m x",
+            "chmod 777 assets/AUDIT-LOG.md",
+            "tee assets/PROPOSALS.md",
+            "sed -i s/a/b/ assets/PROPOSALS.md",
+            "find . -name '*.py'",
+            "env",
+        ):
+            with self.subTest(cmd=cmd):
+                self.assertEqual(classify_tier("bash", {"command": cmd}), TIER_2)
+
     def test_unknown_tool_defaults_tier_2(self):
         self.assertEqual(classify_tier("unknown_tool", {}), TIER_2)
+
+
+class ShellWorkspacePathGuard(unittest.TestCase):
+    def _decision(self, cmd):
+        with TemporaryDirectory() as tmp:
+            ws = _make_workspace(tmp)
+            return approve_or_deny("bash", {"command": cmd}, str(ws))
+
+    def test_workspace_read_command_allowed(self):
+        with TemporaryDirectory() as tmp:
+            ws = _make_workspace(tmp)
+            (ws / "notes.md").write_text("ok")
+            allow, _, _ = approve_or_deny(
+                "bash", {"command": "cat notes.md"}, str(ws)
+            )
+            self.assertTrue(allow)
+
+    def test_shell_read_outside_workspace_denied(self):
+        allow, reason, _ = self._decision("cat /etc/passwd")
+        self.assertFalse(allow)
+        self.assertIn("outside workspace", reason)
+
+    def test_shell_home_secret_path_denied(self):
+        allow, reason, _ = self._decision("cat ~/.ssh/id_rsa")
+        self.assertFalse(allow)
+        self.assertIn("credential path", reason)
+
+    def test_shell_workspace_secret_path_denied(self):
+        allow, reason, _ = self._decision("cat assets/.env")
+        self.assertFalse(allow)
+        self.assertIn("credential path", reason)
+
+    def test_shell_copy_to_tmp_denied(self):
+        allow, reason, _ = self._decision("cp assets/PROPOSALS.md /tmp/out")
+        self.assertFalse(allow)
+        self.assertIn("outside workspace", reason)
 
 
 class DeletionFamily(unittest.TestCase):

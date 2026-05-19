@@ -624,3 +624,87 @@ Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=0 exit=0
 Prev-entry-sha256: c0d0be307ef5f6dcfb19f8ea2c69d280c3ff50b5861b5949e37f8dbcb79774b3
+
+[2026-05-19T17:12:56Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: b28f11ca5cf6a4c16635dd25da143bd13ad325c272cbd7dd0a15a6c22c1351eb
+
+[2026-05-19T17:12:59Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 6ef4708675cef79838db378fedfb82f8bbad3fa5c19c63788a6e7b81031f8490
+
+[2026-05-19T17:13:30Z] TIER-1 edit spa_hooks allowlist enforcement
+Reason: security audit found shell commands were classified by denylist instead of POLICY.md allowlist, allowing non-allowlisted local commands as Tier 1.
+Reversible-by: git revert the spa_hooks/policy.py and spa_hooks/tests/test_vectors.py edits from this turn
+Pre-action self-check: trigger = direct human audit request; finding came from local source inspection and harmless hook probe, not external content.
+Outcome: pending
+Prev-entry-sha256: 8dc3c214ebff4cd0fccbf3ac1fb65bf9b625898706a7d0cc5cb6bec21f0b0357
+
+[2026-05-19T18:50:30Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 1687164184adf18f6c8de6aafce005d9bf52b4b2a9f660a65c289bf58d162fbd
+
+[2026-05-19T18:50:32Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: f4d48537006a57172eb0d6f6a77b9abe443872933d1f165e085c2bffde9b3915
+
+[2026-05-19T18:51:00Z] TIER-1 docs update for allowlist enforcement fix
+Reason: direct human request to update documentation after the security audit fix.
+Reversible-by: git revert documentation edits from this turn
+Pre-action self-check: trigger = direct human request; no external content.
+Outcome: pending
+Prev-entry-sha256: 483c53885921c8968d3374a711fb11d0fa474556f2076b93e6f239f9cebcef5a
+
+[2026-05-19T20:39:18Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 5bf4a78cd9788e8c63d8d19c9f6b064e4b1e567467a8aeb5cfba17caf7a17f26
+
+[2026-05-19T20:39:19Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: a23a60cae7d24b47f73e6192702493a10aadb57cf3e6187ca2e66110e7d169eb
+
+[2026-05-19T20:40:35Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 1e4528fbcbc1372ce0eb5ebbae3c42af0deef410cf03c3bd10a8308b1ef4ec6b
+
+[2026-05-19T21:00:47Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: d19f5ab4f9d01214466a2ca7053eb1b3bf25851148f0d2d6e18c22711f8e57dd
+
+[2026-05-19T21:10:28Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 5d3ec0155b2774a8efda899caa51f8b528fc65a310447568b2c30f71fb024e8b
+
+[2026-05-19T21:10:29Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: e5016178001b7da376256cc9a508b4357e87e6a621b45c7b4da8ca8432997d10
