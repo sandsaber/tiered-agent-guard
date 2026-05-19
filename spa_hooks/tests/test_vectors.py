@@ -1,6 +1,6 @@
 """Enforcement test vectors from references/trust-tiers.md.
 
-Every vector the Safe Proactive Agent claims to enforce must pass here.
+ Every vector Tiered Agent Guard claims to enforce must pass here.
 These are unit tests against the spa_hooks policy module, independent
 of any runtime. Use stdlib unittest so no pytest dependency is required.
 

@@ -1,7 +1,7 @@
-# prompt-injection.md — Defenses & Test Vectors
+# prompt-injection.md — Tiered Agent Guard Prompt-Injection Defenses & Test Vectors
 
 Prompt injection is the primary delivery mechanism for every attack
-surface a proactive agent has. Defenses live in three layers:
+surface a tool-using AI agent has. Defenses live in three layers:
 
 1. **Classification of content origin** — direct human message vs.
    external content.

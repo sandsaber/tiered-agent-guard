@@ -1,7 +1,15 @@
-# spa_hooks — runtime hook reference implementation
+# spa_hooks — Tiered Agent Guard runtime hook reference implementation
 
 Turns the prose in `POLICY.md` + `references/trust-tiers.md` into mechanical
 decisions. Stdlib-only, no external dependencies.
+
+## Note on module name
+
+The Python module is named `spa_hooks` (legacy from when the project was named
+`safe-proactive-agent`). The module name is kept stable for downstream
+integrators who already import from it. The framework as a whole is called
+**Tiered Agent Guard**; `spa_hooks` is its reference Python implementation of
+the runtime hooks.
 
 ## What's here
 
@@ -20,14 +28,14 @@ From the repo root:
 python3 -m unittest spa_hooks.tests.test_vectors -v
 ```
 
-All tests must pass on a clean bundle.
+All tests must pass on a clean framework state.
 
 ## Integration (Claude Code / Anthropic SDK)
 
 ```python
 from spa_hooks import approve_or_deny
 
-WORKSPACE = "/path/to/this/bundle"
+WORKSPACE = "/path/to/tiered-agent-guard"
 
 def pre_tool_use(tool_name, args, context):
     allow, reason, approval = approve_or_deny(tool_name, args, WORKSPACE)

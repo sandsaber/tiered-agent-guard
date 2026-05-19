@@ -1,8 +1,9 @@
-# threat-model.md — STRIDE for a Proactive Agent
+# threat-model.md — Tiered Agent Guard STRIDE Threat Model
 
-This is a compact STRIDE-style threat model for a proactive agent with
-local memory, workspace write access, and optional tool/network access.
-It names the threats and maps each to the mitigation in `POLICY.md`.
+This is a compact STRIDE-style threat model for a tool-using AI agent guarded
+by Tiered Agent Guard. It assumes local memory, workspace write access, and
+optional tool/network access. It names the threats and maps each to the
+mitigation in `POLICY.md`.
 
 ---
 

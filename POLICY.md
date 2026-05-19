@@ -1,4 +1,4 @@
-# POLICY.md — Safe Proactive Agent Security Policy
+# POLICY.md — Tiered Agent Guard Security Policy
 
 **Status:** canonical. Runtime hooks and validator scripts must agree with
 this file. On conflict, this file wins.

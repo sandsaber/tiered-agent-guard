@@ -1,29 +1,106 @@
-# Tiered Agent Guard
-_A runtime-agnostic policy framework for AI agents. Approval artefacts, hash-chained audit, mechanical enforcement of permission boundaries._
+# 🛡️ Tiered Agent Guard
 
-**Version 1.0.0** · License: [MIT-0](LICENSE) · [Security audit: 22 findings, 21 fixed, 1 accepted](SECURITY-AUDIT.md)
+**A runtime-agnostic policy framework for AI agents.**
+Approval artefacts, hash-chained audit, mechanical enforcement of permission
+boundaries.
 
-A runtime-agnostic policy framework for AI agents, with a typed three-tier trust model and mechanical enforcement of permission boundaries. Ships with reference Python hooks, shell-script tooling, and an OpenClaw skill as the first integration. Built for agents that should think more, draft more, propose more — but never act without verified human approval.
+**Version 1.1.0** · License: [MIT-0](LICENSE) · [Security audit: 22 findings, 21 fixed, 1 accepted](SECURITY-AUDIT.md)
 
-The agent is free to **think, draft, propose, rehearse, and notice** inside
-the workspace. It is never free to **reach, send, push, install, overwrite,
-or delete** without an explicit, per-action human approval. That boundary
-is enforced mechanically — not by prose exhortation.
+> This is a **policy framework**, not a classifier model. For classifier-based
+> prompt-injection defence see Llama Guard 3, ShieldGemma, or Granite Guardian.
+> This framework operates at a different layer — action authorisation and audit
+> — and **can be combined with** any of those classifiers at the appropriate
+> point in your stack.
 
-> **The shipping principle:** proactivity is about more thinking, more
-> drafts, and more surfaced ideas — not more unsupervised actions.
+A typed three-tier action model with a working reference implementation of the
+enforcement hooks. The agent is free to **think, draft, propose, rehearse, and
+notice** inside its workspace. It is never free to **reach, send, push, install,
+overwrite, or delete** without an explicit, per-action human approval. That
+boundary is enforced mechanically — not by prose exhortation.
 
-Licensed MIT-0. No warranty. Use freely, modify, redistribute, no
-attribution required.
+> **The shipping principle:** safety is achieved by *what the agent cannot do
+> without approval*, not by *what we ask the agent nicely not to do*.
+
+Licensed MIT-0. No warranty. Use freely, modify, redistribute, no attribution
+required.
+
+## What this is for
+
+You should look at this framework if you are:
+
+- Building an autonomous AI agent that takes actions (file writes, network
+  calls, tool execution) and want to constrain those actions to a
+  verified-approval workflow.
+- Worried about prompt-injection attacks reaching destructive operations.
+- Looking for a permission model stronger than allow/deny lists — one with
+  cryptographic approval artefacts, single-use tokens, and TOCTOU guards.
+- Operating under a compliance regime where every agent action must be
+  auditable and traceable.
+- Researching agent safety architectures and want a working reference
+  implementation to study or extend.
+
+You should NOT look at this framework if you want:
+
+- A classifier model that scores prompts as safe/unsafe. Use Llama Guard 3,
+  ShieldGemma, or Granite Guardian.
+- A generic LLM safety layer for chatbots. This is for tool-using agents
+  specifically.
+- A turnkey solution with zero integration work. This is a framework; you wire
+  the hooks into your runtime.
 
 ---
 
-## What this agent does
+## What this framework provides
 
-### Proactivity (output-bound — every feature writes to a file; nothing leaks as a side-effect)
+### Security guarantees (mechanical, not prose-only)
+
+- [x] **Typed three-tier action model.** Every action is Tier 0 (ambient), Tier 1 (logged + reversible), or Tier 2 (approval required). Default on ambiguity: Tier 2.
+- [x] **Agent-unwritable approval artefacts.** `assets/approvals/<sha>.approved` is the single sanctioned approval channel. Agent has no write-access; only `scripts/approve-proposal.sh` (TTY-gated) can create them.
+- [x] **TOCTOU-guarded approval execution.** At execution time, the current proposal body must still hash to `proposal_sha256` — otherwise the approval is invalid.
+- [x] **Single-use approvals.** After execution, `consumed_at` is flipped; replay is blocked.
+- [x] **14-day approval expiry.** Stale approvals auto-move to `approvals/expired/`.
+- [x] **Hash-chained audit log.** Every entry pins the SHA-256 of prior file content. In-place edits are detectable by a chain walker (`verify-policy.sh §5`).
+- [x] **Three-layer prompt-injection defence.** Origin classification (only direct-human channel grants authority) + heuristic marker scan + tier escalation when a trigger traces back to external content.
+- [x] **Pre-read injection quarantine.** `scripts/injection-scan.sh` moves flagged content into `memory/quarantine/` with a stub pointer; the agent never sees the raw injected payload again.
+- [x] **Self-modification lockout.** `POLICY.md`, `SOUL.md`, `SKILL.md`, and everything under `scripts/` require a `POLICY-APPROVED` or `SCRIPT-APPROVED` entry with matching SHA-256 before any edit.
+- [x] **Heartbeat sandbox.** Read-only outside the workspace, no network, tool allowlist, ≤ 60 s wall-clock, ≤ 20k input tokens, ≤ 24 runs/day per kind. Findings go to `PROPOSALS.md`, never direct action.
+- [x] **Secret-leak scanner.** Detects AWS, GitHub, OpenAI (`sk-*`), Anthropic (`sk-ant-*`), Stripe live, Slack (`xoxb/p/a/app`), Google API keys, JWT, OpenSSH/PGP/RSA private keys, and Bearer/Basic auth tokens anywhere in the tree.
+- [x] **Credential-path and file-name scanner.** Flags `.env`, `.ssh/`, `.aws/`, `.credentials/`, `.netrc`, `.docker/`, `.gnupg/`, `.git-credentials`, `*.pem`, `*.p12`, `id_rsa`, `serviceAccountKey.json`, `secrets.yml` inside the workspace.
+- [x] **macOS ACL check.** Catches world-writable grants set via ACL (invisible to POSIX-mode checks).
+- [x] **63 unit tests.** All eight enforcement vectors from `references/trust-tiers.md`, plus obfuscation-bypass regression (F-21, F-22: `r''m`, `p\ip install`, `bash -lc`, `perl -pe`, etc.), workspace escape (`..`), approval hygiene (expiry, consumed, TOCTOU, subject mismatch).
+
+### Integration paths
+
+The framework is runtime-agnostic. The reference implementation ships as a
+Python module (`spa_hooks`) plus shell scripts, with four supported integration
+paths:
+
+- **Claude Code:** wire pre/post-tool-use hooks through
+  `.claude/settings.json` or an equivalent wrapper.
+- **Anthropic SDK / custom loop:** call
+  `spa_hooks.approve_or_deny(tool_name, args, WORKSPACE_ROOT)` before every
+  tool dispatch.
+- **OpenClaw:** keep `SKILL.md` as the OpenClaw skill entrypoint while treating
+  OpenClaw as one integration path, not the project identity.
+- **Generic proxy layer:** place a proxy in front of tool dispatch and shell out
+  to `spa_hooks` and `scripts/audit-log-append.sh`.
+
+Whatever your runtime, the session-start path should run:
+
+```bash
+./scripts/security-audit.sh && ./scripts/verify-policy.sh
+```
+
+and halt the session if either exits non-zero. This covers policy drift and
+chain-integrity tripwires.
+
+### Proactivity patterns (output-bound)
+
+Every feature writes to a file inside the workspace. Nothing leaks as an
+unapproved side effect.
 
 - [x] **Reverse prompting.** Questions the agent wants to ask go into `memory/open-questions.md`. Surfaced as a single batched reverse-prompt (never one-at-a-time pings).
-- [x] **Pattern detection (N ≥ 3).** Repeat requests are tracked in `PATTERNS.md`. At the third occurrence the agent drafts an automation proposal — never enables it.
+- [x] **Pattern detection (N >= 3).** Repeat requests are tracked in `PATTERNS.md`. At the third occurrence the agent drafts an automation proposal — never enables it.
 - [x] **Draft-but-don't-send.** Every outbound artefact — emails, PRs, commits, messages, posts, package installs — is drafted into `PROPOSALS.md` with rationale and a risk note. Execution is a separate, human-approved step.
 - [x] **Surprise gift queue.** A ranked list of "things I think would delight my human" in `memory/surprise-queue.md`. Top-1 surfaced at session start; never built on the agent's own authority.
 - [x] **Open-question journal.** Separate from in-chat questions; reviewed periodically.
@@ -43,23 +120,6 @@ attribution required.
 - [x] **Three-tier memory.** Raw daily notes → `SESSION-STATE.md` (active) → `memory/YYYY-MM-DD.md` (daily archive) → `MEMORY.md` (distilled durable lessons).
 - [x] **Curated surprise dismissal.** Ideas the human rejected stay flagged in the queue so the agent doesn't re-propose in a month.
 
-### Security guarantees (mechanical, not prose-only)
-
-- [x] **Typed three-tier action model.** Every action is Tier 0 (ambient), Tier 1 (logged + reversible), or Tier 2 (approval required). Default on ambiguity: Tier 2.
-- [x] **Agent-unwritable approval artefacts.** `assets/approvals/<sha>.approved` is the single sanctioned approval channel. Agent has no write-access; only `scripts/approve-proposal.sh` (TTY-gated) can create them.
-- [x] **TOCTOU-guarded approval execution.** At execution time, the current proposal body must still hash to `proposal_sha256` — otherwise the approval is invalid.
-- [x] **Single-use approvals.** After execution, `consumed_at` is flipped; replay is blocked.
-- [x] **14-day approval expiry.** Stale approvals auto-move to `approvals/expired/`.
-- [x] **Hash-chained audit log.** Every entry pins the SHA-256 of prior file content. In-place edits are detectable by a chain walker (`verify-policy.sh §5`).
-- [x] **Three-layer prompt-injection defence.** Origin classification (only direct-human channel grants authority) + heuristic marker scan + tier escalation when a trigger traces back to external content.
-- [x] **Pre-read injection quarantine.** `scripts/injection-scan.sh` moves flagged content into `memory/quarantine/` with a stub pointer; the agent never sees the raw injected payload again.
-- [x] **Self-modification lockout.** `POLICY.md`, `SOUL.md`, `SKILL.md`, and everything under `scripts/` require a `POLICY-APPROVED` or `SCRIPT-APPROVED` entry with matching SHA-256 before any edit.
-- [x] **Heartbeat sandbox.** Read-only outside the workspace, no network, tool allowlist, ≤ 60 s wall-clock, ≤ 20k input tokens, ≤ 24 runs/day per kind. Findings go to `PROPOSALS.md`, never direct action.
-- [x] **Secret-leak scanner.** Detects AWS, GitHub, OpenAI (`sk-*`), Anthropic (`sk-ant-*`), Stripe live, Slack (`xoxb/p/a/app`), Google API keys, JWT, OpenSSH/PGP/RSA private keys, and Bearer/Basic auth tokens anywhere in the tree.
-- [x] **Credential-path and file-name scanner.** Flags `.env`, `.ssh/`, `.aws/`, `.credentials/`, `.netrc`, `.docker/`, `.gnupg/`, `.git-credentials`, `*.pem`, `*.p12`, `id_rsa`, `serviceAccountKey.json`, `secrets.yml` inside the workspace.
-- [x] **macOS ACL check.** Catches world-writable grants set via ACL (invisible to POSIX-mode checks).
-- [x] **63 unit tests.** All eight enforcement vectors from `references/trust-tiers.md`, plus obfuscation-bypass regression (F-21, F-22: `r''m`, `p\ip install`, `bash -lc`, `perl -pe`, etc.), workspace escape (`..`), approval hygiene (expiry, consumed, TOCTOU, subject mismatch).
-
 ### What you configure vs. what ships ready
 
 | Ships ready | You wire up |
@@ -68,7 +128,7 @@ attribution required.
 | Five shell scripts, chmod +x | Claude Code hooks or equivalent pre/post-tool-use wrapper |
 | Python reference hooks (`spa_hooks/`) | Import / subprocess call from your runtime |
 | 63 passing unit tests | Optional: integrate into your CI |
-| POLICY-APPROVED + SCRIPT-APPROVED pins for v1.0.0 | Re-approve after any edit (via `scripts/approve-proposal.sh`) |
+| POLICY-APPROVED + SCRIPT-APPROVED pins for v1.1.0 | Re-approve after any edit (via `scripts/approve-proposal.sh`) |
 
 ---
 
@@ -83,7 +143,6 @@ attribution required.
 - [Components reference](#components-reference)
 - [Testing](#testing)
 - [Known limitations](#known-limitations)
-- [Integration notes](#integration-notes)
 - [Audit state](#audit-state)
 - [License and credits](#license-and-credits)
 
@@ -91,10 +150,10 @@ attribution required.
 
 ## Why this exists
 
-This bundle is a rewrite of the upstream
+This framework is a security-first rewrite of the upstream
 [`halthelobster/proactive-agent`](https://clawhub.ai/halthelobster/proactive-agent)
-v3.1.0 that OpenClaw's security scan flagged for contradictory directives
-(verbatim quotations preserved in
+v3.1.0. OpenClaw's security scan of v3.1.0 flagged contradictory directives
+in the permission model (verbatim quotations preserved in
 [`references/comparison-with-v3.md`](references/comparison-with-v3.md) for
 audit purposes):
 
@@ -104,12 +163,17 @@ audit purposes):
 > contradictions create scope creep and ambiguous authority for
 > automated actions.
 
-We did not try to reconcile the two framings with nuance. We removed the
-"don't ask permission" framing entirely and replaced the permission model
-with a typed, three-tier system in which every action's authority is
-unambiguous. Proactivity is preserved — but relocated into "notice more,
-draft more, propose more, surface more," with every side-effect gated by
-a separate approval step.
+We removed the "don't ask permission" framing entirely and replaced the
+permission model with a **typed, three-tier system** in which every action's
+authority is unambiguous. Proactivity is preserved — but relocated into
+*noticing more, drafting more, proposing more, surfacing more*, with every
+side-effect gated by a separate approval step.
+
+The framework is **runtime-agnostic**. The reference implementation ships as a
+Python module (`spa_hooks`) plus shell scripts. Four integration paths are
+supported out of the box: Claude Code (`.claude/settings.json` hooks),
+Anthropic SDK (direct module import), OpenClaw (skill loading via `SKILL.md`),
+and generic proxy layer (subprocess invocation).
 
 The good patterns from v3.1.0 were kept: the WAL protocol, working buffer,
 compaction recovery, three-tier memory, reverse prompting, pattern
@@ -199,19 +263,19 @@ detection, and verify-before-reporting.
 
 ```bash
 # 1. Clone into your agent's workspace parent
-git clone <this-repo> /path/to/workspaces/safe-proactive-agent
-cd /path/to/workspaces/safe-proactive-agent
+git clone <this-repo> /path/to/workspaces/tiered-agent-guard
+cd /path/to/workspaces/tiered-agent-guard
 
 # 2. Copy the assets into a fresh agent workspace
 mkdir -p ~/my-agent-workspace
 cp -r assets/*.md assets/memory ~/my-agent-workspace/
 
-# 3. Sanity-check the bundle
-./scripts/security-audit.sh    # exits 0 on clean bundle
-./scripts/verify-policy.sh     # exits 0 on clean bundle
+# 3. Sanity-check the framework
+./scripts/security-audit.sh    # exits 0 on a clean framework state
+./scripts/verify-policy.sh     # exits 0 on a clean framework state
 python3 -m unittest spa_hooks.tests.test_vectors    # 63 tests, all green
 
-# 4. Wire the hooks into your runtime (see "Integration notes" below)
+# 4. Wire the hooks into your runtime (see "Integration paths" above)
 ```
 
 ### First run
@@ -354,14 +418,14 @@ pattern detector, proactive tracker, attention-debt scan, alignment
 audit, injection sweep, and policy-drift check, plus proposal
 expiration. Heartbeats file proposals, never execute.
 
-### What is NOT covered at bundle level
+### What is NOT covered at framework level
 
 - **Sub-agent spawn hooks.** Runtime-specific; contract is in
   `references/trust-tiers.md §Sub-agent spawn hook`.
 - **Network-layer enforcement.** You still need egress firewalling /
   sandboxing at the OS layer for the strongest guarantees.
 - **OS-level secret protection.** `.credentials/`, `.ssh/`, etc. are
-  listed in `POLICY.md` as forbidden, but the bundle relies on the
+  listed in `POLICY.md` as forbidden, but the framework relies on the
   runtime to enforce the read-side deny.
 
 ---
@@ -426,7 +490,7 @@ Covered by `spa_hooks/tests/test_vectors.py`:
 
 ## Testing
 
-The bundle is self-verifying. Run all three:
+The framework is self-verifying. Run all three:
 
 ```bash
 ./scripts/security-audit.sh                         # must exit 0
@@ -462,7 +526,7 @@ The audit document includes reproducible harnesses for:
   **audit-chain traceability** — even if an obfuscated call slips
   through the regex, it still gets logged, and the audit trail allows
   the human to notice.
-- **The bundle is not self-enforcing.** It declares a policy and ships
+- **The framework is not self-enforcing.** It declares a policy and ships
   a reference implementation, but the runtime is responsible for
   invoking the hooks. If you wire only the file-layout and skip
   `spa_hooks`, the agent falls back to prose enforcement — which is
@@ -477,51 +541,6 @@ The audit document includes reproducible harnesses for:
 
 ---
 
-## Integration notes
-
-### Claude Code (via `.claude/settings.json`)
-
-Add pre/post-tool-use hooks that shell out to `spa_hooks` or run it
-in-process. Minimal example:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": "python3 -m spa_hooks.cli pre_tool_use",
-    "PostToolUse": "python3 -m spa_hooks.cli post_tool_use"
-  }
-}
-```
-
-(The `cli` module is not shipped; wire in-process if you are building
-a long-running agent.)
-
-### Anthropic SDK / custom agent loop
-
-Call `spa_hooks.approve_or_deny(tool_name, args, WORKSPACE_ROOT)`
-before every tool dispatch. See `spa_hooks/README.md` for a minimal
-integration example.
-
-### Generic proxy layer
-
-If your runtime has no hook API, place a proxy in front of its tool
-dispatch. The proxy can shell out to `scripts/audit-log-append.sh` for
-logging and to `spa_hooks` (via a subprocess) for the allow/deny
-decision.
-
-### Session-start check
-
-Whatever your runtime, make sure the session-start path runs:
-
-```bash
-./scripts/security-audit.sh && ./scripts/verify-policy.sh
-```
-
-and halts the session if either exits non-zero. This covers the
-policy-drift and chain-integrity tripwires.
-
----
-
 ## Audit state
 
 **22 findings total. 21 fixed, 1 accepted as smoke-test.**
@@ -531,7 +550,7 @@ Chronology (full detail in [`SECURITY-AUDIT.md`](SECURITY-AUDIT.md)):
 
 | Wave | Scope | Findings closed |
 |---|---|---|
-| Initial | Complete bundle inspection | 20 findings identified |
+| Initial | Complete framework inspection | 20 findings identified |
 | Strategy A (script-only) | regex hardening, portability | F-01, F-05, F-06, F-10, F-17, F-18, F-19 |
 | Strategy B (structural) | approval artefacts, hash-chain, self-scripts allowlist | F-02, F-03, F-04, F-07, F-11 (+ opportunistic F-12, F-15, F-16) |
 | Strategy C (enforcement) | onboarding validation, injection pre-read, SOUL reconciliation, Python reference impl | F-08, F-09, F-13, F-20 (+ F-14 accepted) |
@@ -560,8 +579,8 @@ working buffer, compaction recovery, three-tier memory, reverse
 prompting, pattern detection, verify-before-reporting) were their
 design and are preserved here.
 
-**Safe-version motivation.** OpenClaw's security scan of v3.1.0
-flagged the permission-model contradictions. This bundle is our fix.
+**Tiered Agent Guard motivation.** OpenClaw's security scan of v3.1.0
+flagged the permission-model contradictions. This framework is our fix.
 Contradictions are quoted verbatim in
 [`references/comparison-with-v3.md`](references/comparison-with-v3.md)
 for audit purposes.
@@ -570,7 +589,7 @@ for audit purposes.
 [`SECURITY-AUDIT.md`](SECURITY-AUDIT.md) for the full audit trail.
 Two things we would recommend to any downstream maintainer: (1) run
 a self-re-audit after every significant new-code phase — F-21 and
-F-22 were discovered this way and existed in the bundle for under an
+F-22 were discovered this way and existed in the framework for under an
 hour each; (2) trust mechanical enforcement over prose — every finding
 that reached production was prose-only; every finding caught early
 was backed by scripts or tests.

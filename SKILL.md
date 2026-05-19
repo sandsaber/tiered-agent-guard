@@ -1,14 +1,18 @@
 ---
-name: safe-proactive-agent
-version: 1.0.0
+name: tiered-agent-guard
+version: 1.1.0
 license: MIT-0
-summary: A proactive agent architecture with a strict tiered-trust security model.
+summary: Runtime-agnostic AI agent policy framework with strict tiered-trust enforcement.
 disable-model-invocation: false
 ---
 
-# Safe Proactive Agent
+# Tiered Agent Guard — OpenClaw Skill Integration
 
-**A proactive agent architecture with a strict security model.**
+**OpenClaw integration for a runtime-agnostic AI agent policy framework.**
+
+This file is the OpenClaw skill entrypoint for the Tiered Agent Guard
+framework. For non-OpenClaw integrations (Claude Code, Anthropic SDK, generic
+proxy), see the README and `spa_hooks/README.md`.
 
 Rewritten from `halthelobster/proactive-agent` v3.1.0 to resolve the
 "permission paradox" that OpenClaw's security scan flagged — two
@@ -30,7 +34,7 @@ approval. This distinction is enforced by a typed **Tiered Trust Model**
 
 ## Quick Start
 
-1. Copy this skill bundle into your agent's workspace.
+1. Copy this framework into your agent's workspace.
 2. Copy assets into the workspace root: `cp assets/*.md ./`
 3. Run the audit: `./scripts/security-audit.sh`
 4. Run the policy validator: `./scripts/verify-policy.sh`
@@ -45,7 +49,7 @@ approval. This distinction is enforced by a typed **Tiered Trust Model**
 
 ## What Changed vs. halthelobster/proactive-agent v3.1.0
 
-| Area | v3.1.0 | Safe version |
+| Area | v3.1.0 | Tiered Agent Guard |
 |------|--------|-------------|
 | Permission model | Contradictory prose ("ask forgiveness" vs "approval required") | One canonical policy, three tiers, typed actions |
 | Enforcement | Prose only | Prose + runtime hook templates + validator script |
@@ -263,5 +267,5 @@ warranty. Descended from MIT-0 upstream.
 ## Credits
 
 - Upstream: `halthelobster/proactive-agent` v3.1.0 (Hal Labs).
-- Safe-version design: motivated by OpenClaw's security scan of the
+- Tiered Agent Guard design: motivated by OpenClaw's security scan of the
   upstream skill, which flagged the permission-model contradictions.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# verify-policy.sh — Safe Proactive Agent policy compliance check
+# verify-policy.sh — Tiered Agent Guard policy compliance check
 #
 # Verifies that the workspace state matches POLICY.md expectations.
 # Read-only; appends a run summary to AUDIT-LOG.md.
@@ -27,7 +27,7 @@ sha256_of() {
     || echo ""
 }
 
-echo "==== Safe Proactive Agent — policy compliance ===="
+echo "==== Tiered Agent Guard — policy compliance ===="
 echo "Root: $ROOT"
 echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo

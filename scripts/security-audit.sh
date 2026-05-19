@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# security-audit.sh — Safe Proactive Agent security audit
+# security-audit.sh — Tiered Agent Guard security audit
 #
 # Read-only. Appends a run summary to AUDIT-LOG.md.
 # Does not modify any operating file except AUDIT-LOG.md (append-only).
@@ -21,7 +21,7 @@ note() { printf '  %s\n' "$*"; }
 warn() { printf '[WARN] %s\n' "$*"; warnings=$((warnings+1)); }
 fail() { printf '[FAIL] %s\n' "$*"; findings=$((findings+1)); }
 
-echo "==== Safe Proactive Agent — security audit ===="
+echo "==== Tiered Agent Guard — security audit ===="
 echo "Root: $ROOT"
 echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo

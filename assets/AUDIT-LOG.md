@@ -505,3 +505,66 @@ Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=0 exit=0
 Prev-entry-sha256: 23ec5a74003302dff9f784fee257efa8512deee80ac2726d814465e6fb205afd
+
+[2026-05-19T16:42:02Z] POLICY-APPROVED
+File: POLICY.md
+New-sha256: 572e469b9b167a6ac4fac67cf0ba243af810102078f8bb7903d988a8bcebbfe0
+Approved-by: direct human request in Codex session
+Diff-summary: Rebrand header from Safe Proactive Agent to Tiered Agent Guard; policy rules unchanged.
+Prev-entry-sha256: b99cc684736210b95222430bd62eddb1b4730d5f0dbaa7b87e455c3085f788c0
+
+[2026-05-19T16:42:03Z] POLICY-APPROVED
+File: SKILL.md
+New-sha256: 4ab5addc881a360c50ffd9f42c2b4897abc48d0d0dd20e766624ff4afdcb8592
+Approved-by: direct human request in Codex session
+Diff-summary: Rebrand OpenClaw entrypoint to Tiered Agent Guard while keeping SKILL.md filename and integration semantics.
+Prev-entry-sha256: c3e25fad83310c42f3b659673a9ebd8eb88432993cc0e863e6e59ffab9296529
+
+[2026-05-19T16:42:04Z] SCRIPT-APPROVED
+File: scripts/security-audit.sh
+New-sha256: 259d43fda3aa053094ec891e260a26a085b56f9727d33a0afc0ea9c4ed959b81
+Approved-by: direct human request in Codex session
+Diff-summary: Rebrand user-visible audit banner/comment only; enforcement logic unchanged.
+Prev-entry-sha256: 514c3e2c009bc0856ae067fd0cc17ddcddb3eadc56c57ca34abd1a507863f060
+
+[2026-05-19T16:42:05Z] SCRIPT-APPROVED
+File: scripts/verify-policy.sh
+New-sha256: 79d5c7722f886eb9d8e8134e56c84977c614a37991107cedf2e265606d16370e
+Approved-by: direct human request in Codex session
+Diff-summary: Rebrand user-visible policy compliance banner/comment only; enforcement logic unchanged.
+Prev-entry-sha256: 31405b03618ee24e5089adf56238bffd1c083441c5164cc37147ce8d9373f950
+
+[2026-05-19T16:42:31Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 5022dd1e1d8d94faf59387b2232807e2f7666f1e3ae77545f2c47a6aa12fbe06
+
+[2026-05-19T16:42:34Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 0d89e4f2c0f854d153e76eac58fcaefaedfda746e7919b64f0b96befee703539
+
+[2026-05-19T16:42:42Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: c64d1ca40be4e9c4d88fa11639ea2e6cd2a702b37ece0cbb87bd978771477686
+
+[2026-05-19T16:43:22Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: c605052b4671b543844db46e3cc24232e28ddf0379730fe1f80bf51b37c7c5df
+
+[2026-05-19T16:43:25Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 46a3f5f996c89eb94fd808adeb752544e839ff0a54137819a52de85f0f3a53ad

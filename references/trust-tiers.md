@@ -1,4 +1,4 @@
-# trust-tiers.md — Full Tier Specification + Hook Templates
+# trust-tiers.md — Tiered Agent Guard Trust Tiers + Hook Templates
 
 This document is the detailed reference for the Tiered Trust Model.
 `POLICY.md` is canonical; this file expands it with decision flowcharts

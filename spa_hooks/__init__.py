@@ -1,4 +1,4 @@
-"""spa_hooks — runtime hook reference implementation for the Safe Proactive Agent.
+"""spa_hooks — runtime hook reference implementation for Tiered Agent Guard.
 
 This module turns the prose in POLICY.md + references/trust-tiers.md into
 mechanical decisions. It is stdlib-only so it can be embedded in any runtime

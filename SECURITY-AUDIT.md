@@ -1,11 +1,16 @@
-# SECURITY-AUDIT.md — Security Audit of openclaw-proactive-agent
+# SECURITY-AUDIT.md — Tiered Agent Guard Security Audit
 
 **Status:** Strategies A–C complete + F-21 (discovered via self-re-audit) fixed. 21/21 findings closed or explicitly accepted.
 **Started:** 2026-04-22
 **Last updated:** 2026-04-22 (F-21 shell-quoting bypass fixed; 56 passing tests)
 **Auditor:** Claude (Opus 4.7, interactive session)
-**Target version:** bundle as of 2026-04-22, before any patches
+**Target version:** framework as of 2026-04-22, before any patches
 **Target platform:** darwin / macOS (per environment)
+
+*Note: this audit was performed on the project under its previous name
+`openclaw-proactive-agent`. All findings, SHAs, and methodology remain valid
+for the renamed framework `tiered-agent-guard`. No code changes were made
+during the rebrand.*
 
 ---
 
@@ -27,7 +32,7 @@ When resuming: read 1, 3, 6, 7, 8 — that's enough context to restart in ~2 min
 
 ## 1. Executive Summary
 
-The `openclaw-proactive-agent` bundle is a skill package that turns an LLM into a proactive agent bounded by a three-tier trust model (Tier 0 ambient / Tier 1 logged / Tier 2 approval-required). Design is conceptually sound — STRIDE threat model covered, three-layer prompt-injection defense, Prime Directives as override, output-bound proactivity. The problem is that declarations outrun enforcement.
+Tiered Agent Guard is a runtime-agnostic policy framework that turns an LLM agent into a proactive agent bounded by a three-tier trust model (Tier 0 ambient / Tier 1 logged / Tier 2 approval-required). Design is conceptually sound — STRIDE threat model covered, three-layer prompt-injection defense, Prime Directives as override, output-bound proactivity. The problem is that declarations outrun enforcement.
 
 **Twenty findings total.** Three critical, five high, seven medium, five low. All three critical (F-01, F-02, F-03) are gaps between policy declaration and mechanical enforcement — drift detection is broken, approval state is writable by the agent itself, and the append-only audit log is not actually append-only.
 
@@ -380,7 +385,7 @@ Three strategies, composable. Recommended order: A → B → C. Effort estimates
 | A6     | F-20     | `assets/memory/surprise-queue.md`: wrap examples in HTML comment      |
 
 **Acceptance criteria for Strategy A:**
-- `./scripts/security-audit.sh` exits 0 on a clean bundle.
+- `./scripts/security-audit.sh` exits 0 on a clean framework state.
 - Manually tamper `assets/SOUL.md` (add newline) → `security-audit.sh` reports WARN/FAIL on SOUL.md specifically, not just one line.
 - Plant `sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` in a throwaway file → detected.
 - Run both scripts with a deliberate syntax error upstream → exit non-zero.
@@ -538,7 +543,7 @@ Update whenever a fix lands. Format: `[YYYY-MM-DD] <fix-id> — <short outcome>`
 ### Log
 
 - [2026-04-22] Initial audit completed; 20 findings documented; no fixes applied yet.
-- [2026-04-22] Strategy A landed (A1–A5). Closed F-01, F-05, F-06, F-10, F-17, F-18, F-19. Also opportunistically fixed an unnumbered issue: `verify-policy.sh` `doc_excludes` now excludes `SECURITY-AUDIT.md` (this file legitimately quotes forbidden strings). Both `security-audit.sh` and `verify-policy.sh` exit 0 on the clean bundle. F-01 verified with tamper-injection harness (see §9 below).
+- [2026-04-22] Strategy A landed (A1–A5). Closed F-01, F-05, F-06, F-10, F-17, F-18, F-19. Also opportunistically fixed an unnumbered issue: `verify-policy.sh` `doc_excludes` now excludes `SECURITY-AUDIT.md` (this file legitimately quotes forbidden strings). Both `security-audit.sh` and `verify-policy.sh` exit 0 on the clean framework state. F-01 verified with tamper-injection harness (see §9 below).
   - Remaining open: F-02, F-03, F-04, F-07, F-08, F-09, F-11, F-12, F-13, F-14, F-15, F-16, F-20.
 - [2026-04-22] Strategy B landed (B1–B4) + opportunistic F-12, F-15, F-16. Closed F-02, F-03, F-04, F-07, F-11 (Strategy B) and F-12, F-15, F-16 (opportunistic). New artifacts: `scripts/audit-log-append.sh`, `scripts/approve-proposal.sh`, `assets/approvals/` (with README). New POLICY sections: §11 Approval Artifacts (6 subsections), §2.2 extended with Project-local scripts allowlist + broader deletion note. New `HEARTBEAT.md §8` (proposal-expiration) + §7 extended. `references/trust-tiers.md` pseudocode rewritten for approvals directory + single_use + TOCTOU. `AUDIT-LOG.md` now chained: 17 entries OK. All 7 tracked files have `POLICY-APPROVED` or `SCRIPT-APPROVED` pins; `security-audit.sh §5` shows all as "matches last approved." Tamper detection verified (chain mismatch on forged edit in an earlier chained entry).
   - Remaining open: F-08, F-09, F-13 (Strategy C), F-14 (weak-signal, accept), F-20 (cosmetic).
@@ -564,7 +569,7 @@ Pick one thread at a time. Recommended: top-down.
 - F-14 (medium, accept-risk) — formally annotate `verify-policy.sh §3` forbidden-string check as a smoke-test only, not a security gate.
 
 **Strategy-C-optional path:**
-- Keep this bundle as a "design + reference scripts" package, and leave runtime hook implementation to downstream users. In that case, the remaining findings become documentation notes rather than code.
+- Keep this framework as a "design + reference scripts" package, and leave runtime hook implementation to downstream users. In that case, the remaining findings become documentation notes rather than code.
 
 **Stop rules:**
 - If at any point a fix requires disabling a load-bearing invariant from §2 — stop, reopen the design discussion, do not proceed.
@@ -600,7 +605,7 @@ If starting a new session:
 
 If any of these get populated during ongoing agent use, they become in-scope for future sweeps (per fix-C2 rationale).
 
-**Memory:** a reference memory entry points to this file. Search memory for "openclaw-proactive-agent" if the path is forgotten.
+**Memory:** a reference memory entry points to this file. Search memory for "openclaw-proactive-agent" or "tiered-agent-guard" if the path is forgotten.
 
 ---
 
