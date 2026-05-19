@@ -1,9 +1,9 @@
-# Safe Proactive Agent
+# Tiered Agent Guard
+_A runtime-agnostic policy framework for AI agents. Approval artefacts, hash-chained audit, mechanical enforcement of permission boundaries._
 
 **Version 1.0.0** · License: [MIT-0](LICENSE) · [Security audit: 22 findings, 21 fixed, 1 accepted](SECURITY-AUDIT.md)
 
-A proactive LLM-agent skill bundle with a **typed, three-tier trust model**
-and a **working reference implementation** of the enforcement hooks.
+A runtime-agnostic policy framework for AI agents, with a typed three-tier trust model and mechanical enforcement of permission boundaries. Ships with reference Python hooks, shell-script tooling, and an OpenClaw skill as the first integration. Built for agents that should think more, draft more, propose more — but never act without verified human approval.
 
 The agent is free to **think, draft, propose, rehearse, and notice** inside
 the workspace. It is never free to **reach, send, push, install, overwrite,
