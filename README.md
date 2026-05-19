@@ -62,19 +62,22 @@ You should NOT look at this framework if you want:
 - [x] **Hash-chained audit log.** Every entry pins the SHA-256 of prior file content. In-place edits are detectable by a chain walker (`verify-policy.sh §5`).
 - [x] **Three-layer prompt-injection defence.** Origin classification (only direct-human channel grants authority) + heuristic marker scan + tier escalation when a trigger traces back to external content.
 - [x] **Pre-read injection quarantine.** `scripts/injection-scan.sh` moves flagged content into `memory/quarantine/` with a stub pointer; the agent never sees the raw injected payload again.
-- [x] **Self-modification lockout.** `POLICY.md`, `SOUL.md`, `SKILL.md`, and everything under `scripts/` require a `POLICY-APPROVED` or `SCRIPT-APPROVED` entry with matching SHA-256 before any edit.
+- [x] **Self-modification lockout.** `POLICY.md`, `SOUL.md`, `SKILL.md`, any `AGENTS.md`, and everything under `scripts/` require a `POLICY-APPROVED` or `SCRIPT-APPROVED` entry with matching SHA-256 before any edit.
 - [x] **Heartbeat sandbox.** Read-only outside the workspace, no network, tool allowlist, ≤ 60 s wall-clock, ≤ 20k input tokens, ≤ 24 runs/day per kind. Findings go to `PROPOSALS.md`, never direct action.
 - [x] **Secret-leak scanner.** Detects AWS, GitHub, OpenAI (`sk-*`), Anthropic (`sk-ant-*`), Stripe live, Slack (`xoxb/p/a/app`), Google API keys, JWT, OpenSSH/PGP/RSA private keys, and Bearer/Basic auth tokens anywhere in the tree.
 - [x] **Credential-path and file-name scanner.** Flags `.env`, `.ssh/`, `.aws/`, `.credentials/`, `.netrc`, `.docker/`, `.gnupg/`, `.git-credentials`, `*.pem`, `*.p12`, `id_rsa`, `serviceAccountKey.json`, `secrets.yml` inside the workspace.
 - [x] **macOS ACL check.** Catches world-writable grants set via ACL (invisible to POSIX-mode checks).
-- [x] **63 unit tests.** All eight enforcement vectors from `references/trust-tiers.md`, plus obfuscation-bypass regression (F-21, F-22: `r''m`, `p\ip install`, `bash -lc`, `perl -pe`, etc.), workspace escape (`..`), approval hygiene (expiry, consumed, TOCTOU, subject mismatch).
+- [x] **64 unit tests.** All eight enforcement vectors from `references/trust-tiers.md`, plus obfuscation-bypass regression (F-21, F-22: `r''m`, `p\ip install`, `bash -lc`, `perl -pe`, etc.), workspace escape (`..`), locked adapter files, approval hygiene (expiry, consumed, TOCTOU, subject mismatch).
 
 ### Integration paths
 
 The framework is runtime-agnostic. The reference implementation ships as a
-Python module (`spa_hooks`) plus shell scripts, with four supported integration
+Python module (`spa_hooks`) plus shell scripts, with five supported integration
 paths:
 
+- **OpenAI Codex CLI:** repo-root `AGENTS.md` is the Codex adapter. It loads the
+  policy and explains the limits of Markdown-only enforcement; combine it with
+  Codex sandbox approvals or a `spa_hooks` proxy for mechanical enforcement.
 - **Claude Code:** wire pre/post-tool-use hooks through
   `.claude/settings.json` or an equivalent wrapper.
 - **Anthropic SDK / custom loop:** call
@@ -127,7 +130,7 @@ unapproved side effect.
 | All policy + operating files | Path to workspace root |
 | Five shell scripts, chmod +x | Claude Code hooks or equivalent pre/post-tool-use wrapper |
 | Python reference hooks (`spa_hooks/`) | Import / subprocess call from your runtime |
-| 63 passing unit tests | Optional: integrate into your CI |
+| 64 passing unit tests | Optional: integrate into your CI |
 | POLICY-APPROVED + SCRIPT-APPROVED pins for v1.1.0 | Re-approve after any edit (via `scripts/approve-proposal.sh`) |
 
 ---
@@ -170,10 +173,11 @@ authority is unambiguous. Proactivity is preserved — but relocated into
 side-effect gated by a separate approval step.
 
 The framework is **runtime-agnostic**. The reference implementation ships as a
-Python module (`spa_hooks`) plus shell scripts. Four integration paths are
-supported out of the box: Claude Code (`.claude/settings.json` hooks),
-Anthropic SDK (direct module import), OpenClaw (skill loading via `SKILL.md`),
-and generic proxy layer (subprocess invocation).
+Python module (`spa_hooks`) plus shell scripts. Five integration paths are
+supported out of the box: OpenAI Codex CLI (repo-root `AGENTS.md`), Claude Code
+(`.claude/settings.json` hooks), Anthropic SDK (direct module import), OpenClaw
+(skill loading via `SKILL.md`), and generic proxy layer (subprocess
+invocation).
 
 The good patterns from v3.1.0 were kept: the WAL protocol, working buffer,
 compaction recovery, three-tier memory, reverse prompting, pattern
@@ -196,7 +200,7 @@ detection, and verify-before-reporting.
   comes from the direct human channel only), heuristic screening, and
   tier escalation when a trigger traces back to external content.
 - **Reference runtime implementation** in Python (`spa_hooks/`) with
-  63 passing unit tests covering the enforcement vectors from
+  64 passing unit tests covering the enforcement vectors from
   `references/trust-tiers.md`.
 - **Self-audited.** 22 security findings were discovered and addressed
   (21 fixed, 1 accepted as smoke-test). See
@@ -208,14 +212,15 @@ detection, and verify-before-reporting.
 
 ```
 .
-├── SKILL.md                    Skill entry point — agents read this first
+├── AGENTS.md                   Universal adapter for Codex-style repo guidance
+├── SKILL.md                    OpenClaw-compatible universal entry point
 ├── POLICY.md                   Canonical security policy (locked)
 ├── README.md                   This file
 ├── SECURITY-AUDIT.md           Full audit report: 22 findings, status, fixes
 │
 ├── assets/
 │   ├── SOUL.md                 Identity, principles, boundaries (locked)
-│   ├── AGENTS.md               Operating rules (Tier 1)
+│   ├── AGENTS.md               Operating rules template (locked)
 │   ├── USER.md                 Human profile template (Tier 1)
 │   ├── ONBOARDING.md           First-run flow with input validation
 │   ├── SESSION-STATE.md        Active working memory (WAL target)
@@ -237,7 +242,8 @@ detection, and verify-before-reporting.
 │   ├── trust-tiers.md          Full tier spec + runtime hook templates
 │   ├── threat-model.md         STRIDE-style threat model
 │   ├── prompt-injection.md     Defences + test vectors V1–V7
-│   └── comparison-with-v3.md   What changed vs. upstream v3.1.0
+│   ├── comparison-with-v3.md   What changed vs. upstream v3.1.0
+│   └── codex-compatibility-audit.md  Codex loading and enforcement audit
 │
 ├── scripts/
 │   ├── security-audit.sh       Read-only audit (drift + secrets + perms)
@@ -252,7 +258,7 @@ detection, and verify-before-reporting.
     ├── approvals.py            ApprovalRecord, TOCTOU guard, single_use
     ├── README.md
     └── tests/
-        └── test_vectors.py     63 unit tests (V1–V8 + obfuscation + hygiene)
+        └── test_vectors.py     64 unit tests (V1–V8 + obfuscation + hygiene)
 ```
 
 ---
@@ -273,7 +279,7 @@ cp -r assets/*.md assets/memory ~/my-agent-workspace/
 # 3. Sanity-check the framework
 ./scripts/security-audit.sh    # exits 0 on a clean framework state
 ./scripts/verify-policy.sh     # exits 0 on a clean framework state
-python3 -m unittest spa_hooks.tests.test_vectors    # 63 tests, all green
+python3 -m unittest spa_hooks.tests.test_vectors    # 64 tests, all green
 
 # 4. Wire the hooks into your runtime (see "Integration paths" above)
 ```
@@ -305,8 +311,8 @@ counting patterns in `PATTERNS.md`, writing WAL notes to
 
 ### Logged (Tier 1) — short audit entry, then proceed
 
-Editing operating files (`AGENTS.md`, `USER.md`, `MEMORY.md`,
-`HEARTBEAT.md`, `ONBOARDING.md`, `TOOLS.md`), running allowlisted
+Editing operating files (`USER.md`, `MEMORY.md`, `HEARTBEAT.md`,
+`ONBOARDING.md`, `TOOLS.md`), running allowlisted
 commands (`ls`, `grep`, `git status`, tests, static checkers). The
 agent appends a `TIER-1` entry to `AUDIT-LOG.md` via
 `scripts/audit-log-append.sh` **before** acting.
@@ -355,7 +361,7 @@ task," no session-level approval.
 | Tier | Examples | Required ceremony |
 |------|----------|-------------------|
 | 0 — ambient | read files, write `PROPOSALS.md`, write `memory/*`, think | none |
-| 1 — logged, reversible | edit `AGENTS.md`, run `ls`, run `git status`, run tests | append a TIER-1 entry to `AUDIT-LOG.md` before acting |
+| 1 — logged, reversible | edit `USER.md`, run `ls`, run `git status`, run tests | append a TIER-1 entry to `AUDIT-LOG.md` before acting |
 | 2 — approval-gated | network, deletion, git push, package install, edit `POLICY.md`/`SOUL.md`/`SKILL.md`, send message, spawn privileged sub-agent | `<sha>.approved` artefact + TIER-2 audit entry + separate execution step |
 
 If the agent cannot unambiguously classify an action, it defaults to
@@ -436,7 +442,7 @@ expiration. Heartbeats file proposals, never execute.
 
 | Script | Purpose | Tier for typical use |
 |---|---|---|
-| `security-audit.sh` | Required-file set, permissions (with macOS ACL), secret-pattern grep (Anthropic / OpenAI / Stripe / Slack / JWT / Google / GitHub / AWS / SSH keys), credential-path scan, drift check for POLICY/SOUL/SKILL/scripts, stale-proposal scan | Tier 1 |
+| `security-audit.sh` | Required-file set, permissions (with macOS ACL), secret-pattern grep (Anthropic / OpenAI / Stripe / Slack / JWT / Google / GitHub / AWS / SSH keys), credential-path scan, drift check for POLICY/SOUL/SKILL/AGENTS/scripts, stale-proposal scan | Tier 1 |
 | `verify-policy.sh` | POLICY.md section presence, SOUL.md boundary clauses, forbidden-directive smoke-test, locked-file SHAs, hash-chain integrity walker, heartbeat-sandbox clauses, approvals consistency | Tier 1 |
 | `audit-log-append.sh` | Helper: read an entry body from stdin, compute SHA-256 of current log, append blank line + body + `Prev-entry-sha256:` line | Tier 1 (used by all logging paths) |
 | `approve-proposal.sh` | Interactive, TTY-gated. Lists pending proposals, requires human to type `yes`, writes `<sha>.approved`, logs TIER-2 approval-granted entry | Tier 2 (and cannot be run non-interactively) |
@@ -561,7 +567,7 @@ Live state after the last run:
 
 - `security-audit.sh`: exit 0, 0 findings, 0 warnings
 - `verify-policy.sh`: exit 0, 0 findings, 0 warnings
-- `python3 -m unittest spa_hooks.tests.test_vectors`: 63 tests, all green
+- `python3 -m unittest spa_hooks.tests.test_vectors`: 64 tests, all green
 - `AUDIT-LOG.md`: 37+ chained entries, integrity verified
 - Drift check: all 8 tracked files match their `POLICY-APPROVED` /
   `SCRIPT-APPROVED` pins

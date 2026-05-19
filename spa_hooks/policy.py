@@ -61,7 +61,12 @@ BLOCKED_COMMAND_PATTERNS: Tuple[str, ...] = (
     r"\bawk\b[^|;&\n]*?\s-[a-zA-Z]*e\b",
 )
 
-LOCKED_WRITE_SUFFIXES: Tuple[str, ...] = ("POLICY.md", "SOUL.md", "SKILL.md")
+LOCKED_WRITE_SUFFIXES: Tuple[str, ...] = (
+    "POLICY.md",
+    "SOUL.md",
+    "SKILL.md",
+    "AGENTS.md",
+)
 LOCKED_WRITE_PREFIXES: Tuple[str, ...] = (
     "scripts/",
     "assets/approvals/",

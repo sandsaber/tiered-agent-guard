@@ -122,10 +122,10 @@ done
 echo
 
 # ------------------------------------------------------------------
-# 4. Locked files: SOUL.md, POLICY.md, SKILL.md
+# 4. Locked files: SOUL.md, POLICY.md, SKILL.md, AGENTS.md
 # ------------------------------------------------------------------
 echo "[4/7] Locked-file sha256 (informational; runtime should enforce)"
-for f in POLICY.md assets/SOUL.md SKILL.md; do
+for f in POLICY.md assets/SOUL.md SKILL.md AGENTS.md assets/AGENTS.md; do
   if [ -f "$f" ]; then
     h=$(sha256_of "$f")
     note "$f  sha256: $h"

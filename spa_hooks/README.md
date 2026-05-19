@@ -30,7 +30,12 @@ python3 -m unittest spa_hooks.tests.test_vectors -v
 
 All tests must pass on a clean framework state.
 
-## Integration (Claude Code / Anthropic SDK)
+## Integration (Codex / Claude Code / Anthropic SDK)
+
+For OpenAI Codex CLI, repo-root `AGENTS.md` provides the prompt-level adapter.
+Markdown guidance alone is not a mechanical pre-tool hook; use Codex sandbox
+approvals, a proxy, or a custom wrapper if you need hard enforcement before
+tool dispatch.
 
 ```python
 from spa_hooks import approve_or_deny

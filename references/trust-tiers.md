@@ -66,11 +66,16 @@ and runtime-specific enforcement templates.
 
 ---
 
-## Claude Code / Claude Agent SDK hook templates
+## Codex CLI / Claude Code / Claude Agent SDK hook templates
 
 These are reference shapes. Adapt to your runtime's exact hook API. The
 *point* is: the prose in `POLICY.md` must be reflected by mechanical
 guards in the runtime.
+
+For Codex CLI specifically, repo-root `AGENTS.md` is the prompt-level adapter
+that Codex loads as repository guidance. That adapter is useful but not a hard
+pre-tool hook by itself. Use Codex sandbox approvals or a proxy that calls
+`spa_hooks.approve_or_deny(...)` when you need mechanical enforcement.
 
 ### Pre-tool-use hook — reject outbound network by default
 
@@ -177,7 +182,7 @@ def pre_tool_use(tool_name, args, context):
 
     if tool_name in ("write_file", "edit_file"):
         path = args.get("path", "")
-        if path.endswith(("POLICY.md", "SOUL.md", "SKILL.md")) \
+        if path.endswith(("POLICY.md", "SOUL.md", "SKILL.md", "AGENTS.md")) \
            or path.startswith("scripts/") \
            or path.startswith("assets/approvals/"):
             rec = find_matching_approval(f"write {path}")

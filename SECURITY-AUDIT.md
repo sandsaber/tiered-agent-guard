@@ -734,7 +734,27 @@ automated — requires a TTY (by design).
 
 ---
 
-## 10. Changelog
+## 10. Codex Compatibility Addendum
+
+On 2026-05-19 the rebrand pass added a Codex compatibility audit. See
+[`references/codex-compatibility-audit.md`](references/codex-compatibility-audit.md).
+
+Result:
+
+- Added repo-root `AGENTS.md`, because OpenAI Codex CLI loads repository
+  guidance from that path and did not automatically load `assets/AGENTS.md`.
+- Reframed `SKILL.md` as a universal integration entrypoint while preserving
+  OpenClaw-compatible front matter.
+- Documented the key Codex boundary: Markdown guidance is discoverability and
+  prompt-level steering, not mechanical pre-tool enforcement. Hard enforcement
+  still requires Codex sandbox approvals or a proxy that calls `spa_hooks`.
+- Added root `AGENTS.md` to `scripts/security-audit.sh` required-file checks.
+- Locked all `AGENTS.md` instruction surfaces as Tier 2 in `POLICY.md`,
+  `spa_hooks`, and the audit drift checks.
+
+---
+
+## 11. Changelog
 
 - **2026-04-22 (v1)** — Initial audit: 20 findings, 3 strategies, 0 fixes applied. Handoff complete.
 - **2026-04-22 (v2)** — Strategy A patches applied to `scripts/security-audit.sh` and `scripts/verify-policy.sh`; opportunistic `doc_excludes` entry for `SECURITY-AUDIT.md`. 7 findings closed: F-01, F-05, F-06, F-10, F-17, F-18, F-19. F-01 verified functionally via tamper-injection harness. 13 findings remain open for Strategies B/C.

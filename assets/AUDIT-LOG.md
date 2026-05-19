@@ -568,3 +568,59 @@ Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=0 exit=0
 Prev-entry-sha256: 46a3f5f996c89eb94fd808adeb752544e839ff0a54137819a52de85f0f3a53ad
+
+[2026-05-19T16:55:21Z] POLICY-APPROVED
+File: POLICY.md
+New-sha256: ba3d4beab8f26be625dd0f0679e4a562b4fe353512a2e5d47ebd7431e237ae0a
+Approved-by: direct human request in Codex session
+Diff-summary: Codex compatibility hardening: version 1.1.0, approval artifacts clarified, AGENTS.md instruction surfaces locked as Tier 2.
+Prev-entry-sha256: 321057f9dae1f31787377611ceea62ca95de374d9c6fb58ef50f84b9bbd39059
+
+[2026-05-19T16:55:22Z] POLICY-APPROVED
+File: SKILL.md
+New-sha256: 5d68796c6019836bcd87042353a4b751641e4d247dc4f0c99874ef1b938546f4
+Approved-by: direct human request in Codex session
+Diff-summary: Reframed OpenClaw skill file as universal integration entrypoint while preserving OpenClaw-compatible front matter.
+Prev-entry-sha256: d6f479ce39d085ba6a195b004cde4d18714a52ceef448dca779cbf21617979ad
+
+[2026-05-19T16:55:23Z] POLICY-APPROVED
+File: AGENTS.md
+New-sha256: d0dad50fb4d839dc9d4cfbe6ce216b73c08d3c13cf98147690ad4980522367ec
+Approved-by: direct human request in Codex session
+Diff-summary: Added repo-root Codex/universal adapter that loads POLICY, README, trust tiers, and spa_hooks guidance.
+Prev-entry-sha256: 2ae04681bd51415ab9c821959b24ff34c9e9654d79d45b413adb4d7e3baa70ef
+
+[2026-05-19T16:55:24Z] POLICY-APPROVED
+File: assets/AGENTS.md
+New-sha256: ab9faf87a8e2a013632e146993ba5b390fd13599b34e7c95aea127a3ac8c7693
+Approved-by: direct human request in Codex session
+Diff-summary: Marked installable operating-rules template as locked because AGENTS.md files are model-instruction surfaces.
+Prev-entry-sha256: 2cec94ff7e0393a8da8fe9d8a33f79bc4cf3c7b0d8decc53f6c1fd637642da96
+
+[2026-05-19T16:55:25Z] SCRIPT-APPROVED
+File: scripts/security-audit.sh
+New-sha256: f537d7d69d9d557e5070c53d42134c3b7e9be0602a942acf03573d01fb0707aa
+Approved-by: direct human request in Codex session
+Diff-summary: Added root AGENTS.md and Codex audit doc to required files; added AGENTS.md files to drift checks.
+Prev-entry-sha256: 413d409eaac1fb08260315688ebdc0faeb501a1c05f2198283a33ac8df1791ca
+
+[2026-05-19T16:55:26Z] SCRIPT-APPROVED
+File: scripts/verify-policy.sh
+New-sha256: 3906b849db96bf86568c2f19debd9dd4e0cb53df35001f29e73d29f326ff1573
+Approved-by: direct human request in Codex session
+Diff-summary: Reports root AGENTS.md and assets/AGENTS.md in locked-file SHA section.
+Prev-entry-sha256: 373a331792b7db1068351524af12a07df4ad35644f7804e722017330630e8254
+
+[2026-05-19T16:56:04Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: f47daf70f541b18090ee8f8937200c68da1419348a748173a551f0c21d348aba
+
+[2026-05-19T16:56:07Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: c0d0be307ef5f6dcfb19f8ea2c69d280c3ff50b5861b5949e37f8dbcb79774b3

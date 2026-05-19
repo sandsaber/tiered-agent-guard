@@ -6,13 +6,14 @@ summary: Runtime-agnostic AI agent policy framework with strict tiered-trust enf
 disable-model-invocation: false
 ---
 
-# Tiered Agent Guard — OpenClaw Skill Integration
+# Tiered Agent Guard — Universal Agent Integration
 
-**OpenClaw integration for a runtime-agnostic AI agent policy framework.**
+**Universal integration notes for a runtime-agnostic AI agent policy framework.**
 
-This file is the OpenClaw skill entrypoint for the Tiered Agent Guard
-framework. For non-OpenClaw integrations (Claude Code, Anthropic SDK, generic
-proxy), see the README and `spa_hooks/README.md`.
+This file remains a valid OpenClaw skill entrypoint, but the framework is not
+OpenClaw-specific. Codex-style agents should load the repo-root `AGENTS.md`;
+Claude Code, Anthropic SDK, OpenClaw, and generic proxy integrations should use
+the README, `references/trust-tiers.md`, and `spa_hooks/README.md`.
 
 Rewritten from `halthelobster/proactive-agent` v3.1.0 to resolve the
 "permission paradox" that OpenClaw's security scan flagged — two
@@ -35,15 +36,17 @@ approval. This distinction is enforced by a typed **Tiered Trust Model**
 ## Quick Start
 
 1. Copy this framework into your agent's workspace.
-2. Copy assets into the workspace root: `cp assets/*.md ./`
-3. Run the audit: `./scripts/security-audit.sh`
-4. Run the policy validator: `./scripts/verify-policy.sh`
-5. Read `POLICY.md` end-to-end. If any rule conflicts with your runtime, fix
+2. For Codex/OpenCode/Gemini-style agents, keep repo-root `AGENTS.md` in place.
+3. For OpenClaw, keep this `SKILL.md` file in place.
+4. Copy assets into the guarded workspace root: `cp assets/*.md ./`
+5. Run the audit: `./scripts/security-audit.sh`
+6. Run the policy validator: `./scripts/verify-policy.sh`
+7. Read `POLICY.md` end-to-end. If any rule conflicts with your runtime, fix
    it in `POLICY.md` *before* the agent runs. Do not let the agent reconcile
    conflicts at runtime.
-6. Wire `POLICY.md`'s allow-lists and deny-lists into your runtime as
+8. Wire `POLICY.md`'s allow-lists and deny-lists into your runtime as
    enforceable hooks (see `references/trust-tiers.md` for hook templates).
-7. Let the agent read `assets/ONBOARDING.md` on first run.
+9. Let the agent read `assets/ONBOARDING.md` on first run.
 
 ---
 
@@ -177,7 +180,7 @@ workspace/
 ├── ONBOARDING.md          # First-run setup
 ├── SOUL.md                # Identity, principles, boundaries   (locked)
 ├── USER.md                # Human's context, goals, preferences
-├── AGENTS.md              # Operating rules, learned lessons
+├── AGENTS.md              # Operating rules, learned lessons      (locked)
 ├── MEMORY.md              # Curated long-term wisdom
 ├── SESSION-STATE.md       # Active working memory (WAL target)
 ├── HEARTBEAT.md           # Periodic self-check routine

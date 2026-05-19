@@ -31,6 +31,7 @@ echo
 # ------------------------------------------------------------------
 echo "[1/7] Required files"
 required=(
+  "AGENTS.md"
   "SKILL.md"
   "POLICY.md"
   "assets/SOUL.md"
@@ -52,6 +53,7 @@ required=(
   "references/threat-model.md"
   "references/prompt-injection.md"
   "references/comparison-with-v3.md"
+  "references/codex-compatibility-audit.md"
   "scripts/security-audit.sh"
   "scripts/verify-policy.sh"
   "scripts/audit-log-append.sh"
@@ -189,7 +191,7 @@ note "scan complete"
 echo
 
 # ------------------------------------------------------------------
-# 5. POLICY / SOUL / SKILL / scripts drift check
+# 5. POLICY / SOUL / SKILL / AGENTS / scripts drift check
 # ------------------------------------------------------------------
 echo "[5/7] Policy drift"
 
@@ -230,11 +232,13 @@ sha256_of() {
 }
 
 if [ -f "assets/AUDIT-LOG.md" ]; then
-  # PD-2 declares scripts/ locked alongside POLICY/SOUL/SKILL; include them.
+  # PD-2 declares AGENTS.md and scripts/ locked alongside POLICY/SOUL/SKILL.
   tracked=(
     "POLICY.md"
     "assets/SOUL.md"
     "SKILL.md"
+    "AGENTS.md"
+    "assets/AGENTS.md"
     "scripts/security-audit.sh"
     "scripts/verify-policy.sh"
     "scripts/audit-log-append.sh"

@@ -199,6 +199,14 @@ class TierClassification(unittest.TestCase):
             classify_tier("write_file", {"path": "scripts/foo.sh"}), TIER_2
         )
 
+    def test_write_agents_is_tier_2(self):
+        self.assertEqual(
+            classify_tier("write_file", {"path": "AGENTS.md"}), TIER_2
+        )
+        self.assertEqual(
+            classify_tier("write_file", {"path": "assets/AGENTS.md"}), TIER_2
+        )
+
     def test_write_approvals_is_tier_2(self):
         self.assertEqual(
             classify_tier("write_file", {"path": "assets/approvals/x.approved"}),

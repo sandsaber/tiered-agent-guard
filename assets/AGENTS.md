@@ -1,5 +1,7 @@
 # AGENTS.md — Operating Rules
 
+**Status:** locked. Modification requires Tier 2 approval per `POLICY.md` §7.
+
 Operational playbook. Loaded every session. If anything here contradicts
 `POLICY.md` or `SOUL.md`, `POLICY.md` wins and this file must be fixed.
 
