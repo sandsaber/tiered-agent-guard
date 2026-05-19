@@ -52,7 +52,10 @@ You should NOT look at this framework if you want:
 
 ## What this framework provides
 
-### Security guarantees (mechanical, not prose-only)
+### Security controls (mechanical, not prose-only)
+
+The framework does not *guarantee* safety; it tightens the agent's reachable
+action surface with mechanical controls that a runtime must wire in.
 
 - [x] **Typed three-tier action model.** Every action is Tier 0 (ambient), Tier 1 (logged + reversible), or Tier 2 (approval required). Default on ambiguity: Tier 2.
 - [x] **Agent-unwritable approval artefacts.** `assets/approvals/<sha>.approved` is the single sanctioned approval channel. Agent has no write-access; only `scripts/approve-proposal.sh` (TTY-gated) can create them.
@@ -97,23 +100,22 @@ Whatever your runtime, the session-start path should run:
 and halt the session if either exits non-zero. This covers policy drift and
 chain-integrity tripwires.
 
-### Proactivity patterns (output-bound)
+### Designed for: proactive agents (example use case)
 
-Every feature writes to a file inside the workspace. Nothing leaks as an
-unapproved side effect.
+The framework was originally built to constrain a proactive agent — one that
+*notices, drafts, proposes, and surfaces ideas* on its own. That use case
+shapes the design (output-bound side effects, draft-but-don't-send, near-miss
+log, heartbeats that file proposals rather than execute), but the framework
+itself does not require any of these patterns. Wire `spa_hooks` into any
+tool-using agent and the controls above apply.
 
-- [x] **Reverse prompting.** Questions the agent wants to ask go into `memory/open-questions.md`. Surfaced as a single batched reverse-prompt (never one-at-a-time pings).
-- [x] **Pattern detection (N >= 3).** Repeat requests are tracked in `PATTERNS.md`. At the third occurrence the agent drafts an automation proposal — never enables it.
-- [x] **Draft-but-don't-send.** Every outbound artefact — emails, PRs, commits, messages, posts, package installs — is drafted into `PROPOSALS.md` with rationale and a risk note. Execution is a separate, human-approved step.
-- [x] **Surprise gift queue.** A ranked list of "things I think would delight my human" in `memory/surprise-queue.md`. Top-1 surfaced at session start; never built on the agent's own authority.
-- [x] **Open-question journal.** Separate from in-chat questions; reviewed periodically.
-- [x] **Near-miss log.** When the agent was about to take a Tier 2 action and stopped itself, it records *what stopped it* in `memory/near-misses.md` — self-calibration over time.
-- [x] **Red-team self-check.** Before any Tier 1+ action: "could this be the result of prompt-injection from external content?" If yes, the tier escalates.
-- [x] **Alignment pulse.** Once per session: "am I still serving the human's stated goals?" If drift detected, one sentence in chat.
-- [x] **Attention-debt tracker.** At the third "later" on the same topic, surfaces a prompt — once, not a nag.
-- [x] **Pre-computed context.** If the human is clearly debugging, the agent reads likely-relevant logs into its own context so the next question lands on warm content.
-- [x] **Self-critique before show.** One silent revision pass before presenting a draft.
-- [x] **Periodic heartbeats (sandboxed).** Eight kinds — memory freshener, pattern detector, proactive tracker, attention-debt scan, alignment audit, injection sweep, policy-drift check, proposal expiration. Heartbeats *file proposals*, never execute.
+The installable proactive-agent template lives under `assets/` (`AGENTS.md`,
+`HEARTBEAT.md`, `memory/`) and inherits the upstream
+`halthelobster/proactive-agent` v3.1.0 patterns — reverse prompting, pattern
+detection at N≥3, draft-but-don't-send, surprise queue, open-question journal,
+near-miss log, red-team self-check, alignment pulse, attention-debt tracker,
+pre-computed context, self-critique, sandboxed heartbeats. Use them, swap
+them, or drop them — the security controls do not depend on them.
 
 ### Memory & continuity
 
@@ -209,6 +211,20 @@ detection, and verify-before-reporting.
 ---
 
 ## Architecture
+
+The repository has three conceptual layers:
+
+- **Framework core** — `POLICY.md`, `scripts/`, `spa_hooks/`. This is what
+  enforces the policy at runtime. It has no dependency on any particular
+  agent and is enough on its own if you wire it into your own tool-using
+  agent.
+- **Installable agent template** — everything under `assets/`. An example
+  proactive-agent workspace (identity, operating rules, heartbeats, memory
+  layout) that the core was originally built to guard. Useful as a reference
+  and a working starting point; not required.
+- **Adapters and references** — root `AGENTS.md` and `SKILL.md` (Codex /
+  OpenClaw integration entrypoints), `README.md`, `SECURITY-AUDIT.md`, and
+  `references/` (threat model, trust-tier spec, prompt-injection vectors).
 
 ```
 .
@@ -429,7 +445,7 @@ expiration. Heartbeats file proposals, never execute.
 - **Sub-agent spawn hooks.** Runtime-specific; contract is in
   `references/trust-tiers.md §Sub-agent spawn hook`.
 - **Network-layer enforcement.** You still need egress firewalling /
-  sandboxing at the OS layer for the strongest guarantees.
+  sandboxing at the OS layer for the strongest enforcement.
 - **OS-level secret protection.** `.credentials/`, `.ssh/`, etc. are
   listed in `POLICY.md` as forbidden, but the framework relies on the
   runtime to enforce the read-side deny.
