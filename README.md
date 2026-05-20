@@ -571,6 +571,20 @@ The audit document includes reproducible harnesses for:
 
 ## Known limitations
 
+- **MVP tool coverage is Bash-only (forthcoming Claude Code plugin).**
+  The in-progress Claude Code plugin's PreToolUse / PostToolUse hooks
+  intercept the `Bash` tool only. Other Claude Code tools — `Write`,
+  `Edit`, `WebFetch`, `WebSearch`, `Task` (sub-agent spawn), and
+  `mcp__*` (MCP server tools) — are NOT gated by the plugin's
+  mechanical hooks in MVP. Agents using those tools fall back to prose
+  enforcement (POLICY.md) plus whatever the underlying runtime
+  provides (e.g. Claude Code's built-in permission prompts).
+  This means: with the MVP plugin installed, an agent could `Write` a
+  file outside the workspace, `WebFetch` to exfiltrate state, or
+  `Task`-spawn an un-gated sub-agent without the framework's hook
+  blocking it. Expansion to those tools is the next milestone after
+  MVP ships. Treat the current shape as a working starting point, not
+  a complete production guarantee.
 - **Regex-based command matching is not a complete shell parser.**
   F-21 (quote/escape) and F-22 (compressed interpreter flags) were
   closed via shlex tokenisation and extended patterns. More exotic
