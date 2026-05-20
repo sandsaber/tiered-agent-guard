@@ -188,6 +188,58 @@ else
   elif [ "$chain_bad" -eq 0 ]; then
     note "chain verified: $chain_count entries OK"
   fi
+
+  # ----------------------------------------------------------------
+  # 5b. Unchained timestamped entries (blind-spot scan).
+  #
+  # The chain walk above only inspects blocks that contain a
+  # Prev-entry-sha256: line. Timestamped entries (e.g. legacy entries
+  # from before chaining was enforced) that lack that link are silently
+  # skipped — a blind spot. Surface their existence as warnings so the
+  # human can decide whether to migrate them; do not fail the audit,
+  # since legacy entries are expected.
+  # ----------------------------------------------------------------
+  unchained_out=$(python3 - "$STATE_ROOT/assets/AUDIT-LOG.md" <<'PYEOF'
+import re, sys
+path = sys.argv[1]
+try:
+    with open(path, 'r', encoding='utf-8', errors='replace') as fh:
+        text = fh.read()
+except OSError as exc:
+    print(f"ERR cannot read audit log: {exc}", file=sys.stderr)
+    sys.exit(0)
+ts_re = re.compile(r'^\[20\d{2}-\d{2}-\d{2}T', re.M)
+unchained = []
+for block in text.split('\n\n'):
+    m = ts_re.search(block)
+    if not m:
+        continue
+    if 'Prev-entry-sha256:' in block:
+        continue
+    # First line beginning with [YYYY-... is the entry header.
+    header = next((ln for ln in block.splitlines() if ts_re.match(ln)), block.splitlines()[0])
+    unchained.append(header.strip())
+for header in unchained:
+    print(f"WARN unchained entry: {header}")
+print(f"TOTAL unchained: {len(unchained)}")
+PYEOF
+  )
+  unchained_total=0
+  while IFS= read -r uline; do
+    case "$uline" in
+      "WARN unchained entry: "*)
+        warn "unchained entry: ${uline#WARN unchained entry: }"
+        ;;
+      "TOTAL unchained: "*)
+        unchained_total="${uline#TOTAL unchained: }"
+        ;;
+    esac
+  done <<< "$unchained_out"
+  if [ "${unchained_total:-0}" -eq 0 ]; then
+    note "no unchained timestamped entries"
+  else
+    note "unchained timestamped entries: $unchained_total (legacy, not a finding)"
+  fi
 fi
 echo
 

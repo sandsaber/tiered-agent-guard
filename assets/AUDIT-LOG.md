@@ -966,3 +966,61 @@ Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=0 exit=0
 Prev-entry-sha256: 3f69f97751dd938206d77e7b032e7cc481bc9a47b97b1c0e752aaf56c3f7791f
+
+[2026-05-20T11:07:47Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: baa49d3bbeec61daa1ca5911215c47159f238c8b5c577e32a3673aa7b3d19b92
+
+[2026-05-20T11:07:49Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 7ff9170130eb2f2a0e1a5a082864780316ccc025d52d92cc350b85dd119d1cd2
+
+[2026-05-20T11:13:38Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=15 exit=1
+Prev-entry-sha256: fce37948d7f98bfb1eaf2ce25aa1df083de418f6eed837af3fdc25b8a303f600
+
+[2026-05-20T11:14:07Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=15 exit=1
+Prev-entry-sha256: cf265b2953ce655ec5abffd4c9982de6d2e8e9fa089d66ba1aeecc4ff95f0ec7
+
+[2026-05-20T11:14:13Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=1 exit=1
+Prev-entry-sha256: 41303c8f6d3abe00434b338226ad556db174e5f57bb3f7404a288afc489cf073
+
+[2026-05-20T11:14:18Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=1 exit=1
+Prev-entry-sha256: 98f8b51bd4e9b8f8981ae5f2469f028bd0db84e14f66b6b1a6e89524c07724f3
+
+[2026-05-20T11:14:44Z] TIER-1 SCRIPT-APPROVED
+File: scripts/verify-policy.sh
+New-sha256: 105e9e04d098ccd2d8b08518316212b47b19baa80c0d5e814c07ee6b36685a42
+Reason: Improvement #1 — chain walker now reports unchained timestamped entries as warnings (not findings). Closes a blind spot where legacy un-chain-linked entries were silently invisible.
+Reversible-by: git revert of this commit.
+Pre-action self-check: trigger = code review of session work; no external instruction.
+Outcome: success
+Prev-entry-sha256: 56eb4dbb1b3e189acc68221de19ac45bfe180629ff2846be15beb6b72b95fbd8
+
+[2026-05-20T11:14:49Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 49dffc6067fe90a08e56019756c2243831c7808d770138b185c96362ad528746
