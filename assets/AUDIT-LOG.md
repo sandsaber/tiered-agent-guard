@@ -708,53 +708,25 @@ Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=0 exit=0
 Prev-entry-sha256: e5016178001b7da376256cc9a508b4357e87e6a621b45c7b4da8ca8432997d10
-[2026-05-20 00:00:00] TIER-1 [workspace update] README hero image
-Reason: Copy the generated README hero into references/ and reference it from README.md.
-Reversible-by: remove README image reference and delete/revert references/tiered-agent-guard-hero.png
-Outcome: pending
 
-[2026-05-20 00:00:00] TIER-1 [verification] README hero image
-Reason: Verify README reference, generated image file type, and git working tree after adding the README hero.
-Reversible-by: N/A (read-only commands)
-Outcome: pending
+[2026-05-20T00:00:00Z] TIER-1 audit-log truncation Codex self-application residue
+Reason: Removed 50 malformed entries (former lines 711-760) left by a Codex session that applied this framework to itself. The removed entries had missing Prev-entry-sha256 lines (broken chain), placeholder timestamps `2026-05-20 00:00:00`, non-monotonic ordering, and Outcome: pending never closed.
+Reversible-by: git revert of the truncation commit; the malformed content is preserved in git history (commit prior to this entry).
+Pre-action self-check: trigger = direct human request to clean the log; the malformed entries are local repo state, not external content; user explicitly chose "truncate + add note" with full awareness that this violates strict append-only.
+Pre-trunc-sha256: 808457728bd33ad87394cc9834983c10cd08d0f76ddf6f5ff04048c3d80bdc01
+Outcome: success
+Prev-entry-sha256: 99f34c7531a185aa9d5f5665d3877622230fc557c3077253c2b7cd7a6b1a9bba
 
-[2026-05-20 00:00:00] TIER-1 [read-only inspection] accidental root audit log
-Reason: Inspect the accidental root-level AUDIT-LOG.md before deciding whether it can be removed.
-Reversible-by: N/A (read-only command)
-Outcome: pending
-
-
-[2026-05-20T00:00:00Z] TIER-1 cleanup accidental root audit log
-Reason: Remove the accidentally created root-level AUDIT-LOG.md; canonical audit log for this repository is assets/AUDIT-LOG.md.
-Reversible-by: git restore of untracked file content is not applicable; content was duplicated error logs only.
-Pre-action self-check: trigger = direct human request to use generated README image; no external instruction content.
-Outcome: pending
-Prev-entry-sha256: c8d3f6b499babb06b9362e6ffd0c615ba9fc0f9291fcf76f699b3d9316269b76
-
-[2026-05-19T21:58:28Z] TIER-1 security-audit.sh
-Reason: routine audit
-Reversible-by: N/A (read-only + append)
-Pre-action self-check: trigger = human or onboarding; no external content.
-Outcome: findings=0 warnings=0 exit=0
-Prev-entry-sha256: 95c42df1e0375c1600f0566bb0ecc9342a40b76ec8485cd60c7a4e297045f38a
-
-[2026-05-19T21:58:32Z] TIER-1 verify-policy.sh
+[2026-05-20T09:04:02Z] TIER-1 verify-policy.sh
 Reason: routine compliance check
 Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=0 exit=0
-Prev-entry-sha256: 641621ae75f43130d006a3a6287dce22ab3653de10fc181c199ccb59935188b9
+Prev-entry-sha256: 625d7e1d8efcc0904c5ef2bc0a0464203b18d89c89db62179ef9e3ebb814a96a
 
-[2026-05-20T00:00:00Z] TIER-1 unittest spa_hooks.tests.test_vectors
-Reason: Run the repository unit-test gate required before reporting the README image update ready.
-Reversible-by: N/A (read-only test execution)
-Pre-action self-check: trigger = direct human request to use generated README image; no external instruction content.
-Outcome: pending
-Prev-entry-sha256: 4a50fd103d1b2e2220b7b51562ffdf36e529ce27b8a17ceaa246974efb72c733
-
-[2026-05-20T00:00:00Z] TIER-1 final status check after README hero update
-Reason: Report exact working-tree state after adding the README hero image and running validation.
-Reversible-by: N/A (read-only command)
-Pre-action self-check: trigger = direct human request to use generated README image; no external instruction content.
-Outcome: pending
-Prev-entry-sha256: 0d454951d1d81ca093bbc7ea4f93ec705ce6523959bbcc8ada881a4aef856d2c
+[2026-05-20T09:04:03Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 2546b4e8a00fcc1760ec509a58d6b153c460f6bbf8938bfdebddef122debe4fe
