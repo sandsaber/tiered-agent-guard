@@ -1024,3 +1024,37 @@ Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=0 exit=0
 Prev-entry-sha256: 49dffc6067fe90a08e56019756c2243831c7808d770138b185c96362ad528746
+
+[2026-05-20T11:20:35Z] TIER-1 SCRIPT-APPROVED
+File: scripts/security-audit.sh
+New-sha256: 1edc17d0ff1e1eae62de40283e44879b1d921e6e2ed5da5ec19a06fe0c86d571
+Reason: Improvement #4 — extracted shared --policy-root / --state-root flag parsing into scripts/lib/split-root-flags.sh. Behaviour preserved (verified by full audit + verify + integration tests + 79 unit tests).
+Reversible-by: git revert of this commit.
+Pre-action self-check: trigger = code review found DRY violation; no external instruction.
+Outcome: success
+Prev-entry-sha256: 6b96ecbe03faee7f1bae05a8cc376fd5b177dd49dc8ef05f0c20c6eccd205453
+
+[2026-05-20T11:20:35Z] TIER-1 SCRIPT-APPROVED
+File: scripts/verify-policy.sh
+New-sha256: d59b0d75c4e3623eaa0e9dbf692ebbe45217750f7e9e5c37b78a983d338d113d
+Reason: Improvement #4 — extracted shared --policy-root / --state-root flag parsing into scripts/lib/split-root-flags.sh. Behaviour preserved (verified by full audit + verify + integration tests + 79 unit tests).
+Reversible-by: git revert of this commit.
+Pre-action self-check: trigger = code review found DRY violation; no external instruction.
+Outcome: success
+Prev-entry-sha256: 4bead0973d84ee221c9daffb952f20a1485d929cd88babc00a67124e98afbcd9
+
+[2026-05-20T11:20:35Z] TIER-1 SCRIPT-APPROVED
+File: scripts/audit-log-append.sh
+New-sha256: c6ca593262f58ee7159638986cbd2bca46e3bed3fbf204670627ae1bc202a76f
+Reason: Improvement #4 — extracted shared --policy-root / --state-root flag parsing into scripts/lib/split-root-flags.sh. Behaviour preserved (verified by full audit + verify + integration tests + 79 unit tests).
+Reversible-by: git revert of this commit.
+Pre-action self-check: trigger = code review found DRY violation; no external instruction.
+Outcome: success
+Prev-entry-sha256: 06eddb5b76d339ea4b2431b5e83c5ec9fa3b4ee9aba5202526d11eda774d0d3b
+
+[2026-05-20T11:20:35Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: e52899b84749f0e088fba61aeeb4054bae1d3dc3de101ef431f61aacd1ba9c2e

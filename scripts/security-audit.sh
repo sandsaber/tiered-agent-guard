@@ -16,22 +16,8 @@ SELF="$(basename "$0")"
 # Split-layout flags. Defaults preserve single-root behaviour:
 #   POLICY_ROOT = repo root (where this script lives)
 #   STATE_ROOT  = POLICY_ROOT (legacy)
-POLICY_ROOT_FLAG=""
-STATE_ROOT_FLAG=""
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --policy-root) POLICY_ROOT_FLAG="$2"; shift 2 ;;
-    --state-root)  STATE_ROOT_FLAG="$2";  shift 2 ;;
-    *) shift ;;
-  esac
-done
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-POLICY_ROOT="${POLICY_ROOT_FLAG:-$ROOT}"
-STATE_ROOT="${STATE_ROOT_FLAG:-$ROOT}"
-if [ -n "$POLICY_ROOT_FLAG$STATE_ROOT_FLAG" ] && [ -z "$POLICY_ROOT_FLAG" -o -z "$STATE_ROOT_FLAG" ]; then
-  echo "$(basename "$0"): --policy-root and --state-root must be used together" >&2
-  exit 3
-fi
+. "$(dirname "$0")/lib/split-root-flags.sh"
 cd "$POLICY_ROOT" || { echo "[$SELF] cannot cd to $POLICY_ROOT"; exit 3; }
 
 findings=0
@@ -370,7 +356,7 @@ Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=$findings warnings=$warnings exit=$exit_code
 ENTRY
 )
-  printf '%s\n' "$entry" | "$POLICY_ROOT/scripts/audit-log-append.sh" --state-root "$STATE_ROOT"
+  printf '%s\n' "$entry" | "$POLICY_ROOT/scripts/audit-log-append.sh" --policy-root "$POLICY_ROOT" --state-root "$STATE_ROOT"
 fi
 
 exit "$exit_code"

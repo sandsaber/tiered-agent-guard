@@ -21,20 +21,9 @@
 
 set -euo pipefail
 
-STATE_ROOT_FLAG=""
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --state-root) STATE_ROOT_FLAG="$2"; shift 2 ;;
-    *) shift ;;
-  esac
-done
-
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-if [ -n "$STATE_ROOT_FLAG" ]; then
-  LOG="$STATE_ROOT_FLAG/assets/AUDIT-LOG.md"
-else
-  LOG="$ROOT/assets/AUDIT-LOG.md"
-fi
+. "$(dirname "$0")/lib/split-root-flags.sh"
+LOG="$STATE_ROOT/assets/AUDIT-LOG.md"
 
 [ -f "$LOG" ] || { echo "audit-log-append: log not found: $LOG" >&2; exit 3; }
 
