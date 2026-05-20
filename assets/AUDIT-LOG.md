@@ -1072,3 +1072,17 @@ Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=15 exit=1
 Prev-entry-sha256: c8397e1e28708ec300e3ff083eab90aa2eb305b12a20f307ca58454c3aa35f12
+
+[2026-05-20T12:15:20Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: e3a824ac5dd8de93e629aae5cf3e153e79106ec970136562f98c6143beb1c768
+
+[2026-05-20T12:15:22Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=15 exit=1
+Prev-entry-sha256: 191ed236757e518962f9bc2a8cf394c5425eae4950afc12333a4dea27b35b70c
