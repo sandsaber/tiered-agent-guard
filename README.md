@@ -1,10 +1,20 @@
 # 🛡️ Tiered Agent Guard
 
+![Tiered Agent Guard hero: AI agent tool actions pass through Tier 0, Tier 1, and Tier 2 security gates, approval artefacts, and a hash-chained audit trail before reaching a protected workspace.](references/tiered-agent-guard-hero.png)
+
 **A runtime-agnostic policy framework for AI agents.**
 Approval artefacts, hash-chained audit, mechanical enforcement of permission
 boundaries.
 
 **Version 1.1.0** · License: [MIT-0](LICENSE) · [Security audit: 23 findings, 22 fixed, 1 accepted](SECURITY-AUDIT.md)
+
+> **Status: proof-of-concept.** The design, controls, and reference
+> implementation are in place and self-tested (72 unit tests, hash-chain
+> integrity, drift checks). Quantitative benchmarks — latency overhead per
+> tool call, false-positive/false-negative rates on injection corpora,
+> attack-vector coverage against published agent red-team suites — are
+> **in progress** and not yet published. Treat this as a starting point
+> for integration and study, not a drop-in production guarantee.
 
 > This is a **policy framework**, not a classifier model. For classifier-based
 > prompt-injection defence see Llama Guard 3, ShieldGemma, or Granite Guardian.
