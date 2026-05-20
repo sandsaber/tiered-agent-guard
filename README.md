@@ -310,6 +310,28 @@ python3 -m unittest spa_hooks.tests.test_vectors    # 72 tests, all green
 # 4. Wire the hooks into your runtime (see "Integration paths" above)
 ```
 
+### Project-local state and `.gitignore`
+
+If you integrate this framework so that per-project state (audit log,
+approval artefacts, proposals, memory) lives inside the user's own git
+repository — for example under `.tiered-agent-guard/` once the Claude
+Code plugin ships, or under any other path you choose for vendor-mode —
+**add that path to `.gitignore` before the first agent session runs**.
+Otherwise:
+
+- Approval artefacts get committed, exposing per-action SHAs and
+  timestamps.
+- The audit log accumulates operational entries in repo history,
+  bloating diffs and surfacing internal command sequences.
+- Drafts in `PROPOSALS.md` (which include actions the human declined to
+  approve) become permanently traceable.
+
+A typical line in `.gitignore`:
+
+```gitignore
+.tiered-agent-guard/
+```
+
 ### First run
 
 Point the agent at `assets/ONBOARDING.md`. The onboarding flow:
