@@ -758,3 +758,93 @@ Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=0 exit=0
 Prev-entry-sha256: 51bc1dca4524b4732c3972905b725e6d8860a1125e040728dc55dfc5a1a1640e
+
+[2026-05-20T10:38:03Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: f26a837352695d9d2660fe92d4f70202333342348b0d3d593f262282e7d935bc
+
+[2026-05-20T10:40:51Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=1 exit=1
+Prev-entry-sha256: fde97d3eec7b4ddf80cfade3ed9a039ef8f550e17e6b7455ac6f69be8e6d1de7
+
+[2026-05-20T10:41:24Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=1 exit=1
+Prev-entry-sha256: e75385d903c7ccf148760c5ee53473ae57a9520a4543a104feeec1debff90e2f
+
+[2026-05-20T10:43:03Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=1 exit=1
+Prev-entry-sha256: 0d1ea0045cdd35f8d6362dd6a97aefbc8acfc3e8ae75b1ab66498255ef58c5dc
+
+[2026-05-20T10:47:22Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: c7674e52bb67ae489e81582bea8edb32a0a86b010b2017aabe9a403b27dec7d3
+
+[2026-05-20T10:48:33Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: c45f7044b2c155d1bd421181a9988028707b57a6f6a03f0379513eb085978b2e
+
+[2026-05-20T10:49:46Z] TIER-1 SCRIPT-APPROVED scripts/security-audit.sh
+SCRIPT-APPROVED scripts/security-audit.sh: 65fb3e3c26e40689be97fa35770732ebd2807c5883321763b9088d0658df962e
+Reason: Phase B — added --policy-root / --state-root flags for Claude Code plugin integration. Behaviour preserved for legacy single-root invocation; new flag forwards into split-root path resolution. Reviewed by spec compliance reviewer subagent.
+Reversible-by: git revert of the Phase B commit (will revert both audit scripts together).
+Pre-action self-check: trigger = direct human request to ship Phase B; no external instruction content.
+Outcome: success
+Prev-entry-sha256: f1e6f56fe32b76a77b1b53ce8709cfef1b1e07784d7df6592e90969e3fe13c92
+
+[2026-05-20T10:49:54Z] TIER-1 SCRIPT-APPROVED scripts/verify-policy.sh
+SCRIPT-APPROVED scripts/verify-policy.sh: c542e5d3b31fd910ce2d21e64bdc1c7b55af2fa3c6390d66caceff4efa5b3d3a
+Reason: Phase B — added --policy-root / --state-root flags for Claude Code plugin integration. Behaviour preserved for legacy single-root invocation; new flag forwards into split-root path resolution. Reviewed by spec compliance reviewer subagent.
+Reversible-by: git revert of the Phase B commit (will revert both audit scripts together).
+Pre-action self-check: trigger = direct human request to ship Phase B; no external instruction content.
+Outcome: success
+Prev-entry-sha256: 16afaadbb92d86f7d0850d710efeea3bf1de60f94e9944aaa6b74d551def707a
+
+[2026-05-20T10:49:59Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=2 exit=1
+Prev-entry-sha256: ed5c796990b401b2d61ddc87c8e35b25e57c5a5d2e923049ca9eca429537bc9c
+
+[2026-05-20T10:50:31Z] TIER-1 SCRIPT-APPROVED
+File: scripts/security-audit.sh
+New-sha256: 65fb3e3c26e40689be97fa35770732ebd2807c5883321763b9088d0658df962e
+Reason: Phase B — added --policy-root / --state-root flags for Claude Code plugin integration. Behaviour preserved for legacy single-root invocation; new flag forwards into split-root path resolution. Reviewed by spec compliance reviewer subagent.
+Reversible-by: git revert of the Phase B commit (will revert both audit scripts together).
+Pre-action self-check: trigger = direct human request to ship Phase B; no external instruction content.
+Outcome: success
+Prev-entry-sha256: d9168e0784d8784b9d133f71fa124b279ae4f793b58a4879b94a45300ab17d93
+
+[2026-05-20T10:50:38Z] TIER-1 SCRIPT-APPROVED
+File: scripts/verify-policy.sh
+New-sha256: c542e5d3b31fd910ce2d21e64bdc1c7b55af2fa3c6390d66caceff4efa5b3d3a
+Reason: Phase B — added --policy-root / --state-root flags for Claude Code plugin integration. Behaviour preserved for legacy single-root invocation; new flag forwards into split-root path resolution. Reviewed by spec compliance reviewer subagent.
+Reversible-by: git revert of the Phase B commit (will revert both audit scripts together).
+Pre-action self-check: trigger = direct human request to ship Phase B; no external instruction content.
+Outcome: success
+Prev-entry-sha256: ed10a92123127f2ae9c6489e446812dbae3502b79bae6801de957875be81eacf
+
+[2026-05-20T10:50:43Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 1414bc2bb9e70093fb1c013dd7e4a66cca600c63cce948b3a472ac7c90d7004e

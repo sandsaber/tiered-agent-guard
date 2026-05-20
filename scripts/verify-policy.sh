@@ -12,8 +12,23 @@
 set -euo pipefail
 
 SELF="$(basename "$0")"
+
+# Split-layout flags. Defaults preserve single-root behaviour:
+#   POLICY_ROOT = repo root (where this script lives)
+#   STATE_ROOT  = POLICY_ROOT (legacy)
+POLICY_ROOT_FLAG=""
+STATE_ROOT_FLAG=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --policy-root) POLICY_ROOT_FLAG="$2"; shift 2 ;;
+    --state-root)  STATE_ROOT_FLAG="$2";  shift 2 ;;
+    *) shift ;;
+  esac
+done
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT" || { echo "[$SELF] cannot cd to $ROOT"; exit 3; }
+POLICY_ROOT="${POLICY_ROOT_FLAG:-$ROOT}"
+STATE_ROOT="${STATE_ROOT_FLAG:-$ROOT}"
+cd "$POLICY_ROOT" || { echo "[$SELF] cannot cd to $POLICY_ROOT"; exit 3; }
 
 findings=0
 warnings=0
@@ -28,7 +43,8 @@ sha256_of() {
 }
 
 echo "==== Tiered Agent Guard — policy compliance ===="
-echo "Root: $ROOT"
+echo "Policy root: $POLICY_ROOT"
+echo "State  root: $STATE_ROOT"
 echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo
 
@@ -137,7 +153,7 @@ echo
 # 5. AUDIT-LOG.md hash-chain integrity (B4)
 # ------------------------------------------------------------------
 echo "[5/7] AUDIT-LOG chain integrity"
-if [ ! -f "assets/AUDIT-LOG.md" ]; then
+if [ ! -f "$STATE_ROOT/assets/AUDIT-LOG.md" ]; then
   warn "AUDIT-LOG.md not present yet (first run?)"
 else
   sha_cmd() { { shasum -a 256 2>/dev/null; } || { sha256sum; }; }
@@ -146,8 +162,8 @@ else
   while IFS= read -r pln; do
     [ -z "$pln" ] && continue
     chain_count=$((chain_count + 1))
-    claimed=$(awk -v ln="$pln" 'NR==ln {sub(/^Prev-entry-sha256:[[:space:]]*/, ""); print; exit}' assets/AUDIT-LOG.md)
-    entry_start=$(awk -v up="$pln" 'NR<=up && /^\[/ {ls=NR} END{print ls}' assets/AUDIT-LOG.md)
+    claimed=$(awk -v ln="$pln" 'NR==ln {sub(/^Prev-entry-sha256:[[:space:]]*/, ""); print; exit}' "$STATE_ROOT/assets/AUDIT-LOG.md")
+    entry_start=$(awk -v up="$pln" 'NR<=up && /^\[/ {ls=NR} END{print ls}' "$STATE_ROOT/assets/AUDIT-LOG.md")
     if [ -z "$entry_start" ]; then
       fail "chain: cannot locate entry start for Prev-entry-sha256 at line $pln"
       chain_bad=$((chain_bad + 1)); continue
@@ -156,13 +172,13 @@ else
     if [ "$content_end" -lt 1 ]; then
       expected=$(printf '' | sha_cmd | awk '{print $1}')
     else
-      expected=$(head -n "$content_end" assets/AUDIT-LOG.md | sha_cmd | awk '{print $1}')
+      expected=$(head -n "$content_end" "$STATE_ROOT/assets/AUDIT-LOG.md" | sha_cmd | awk '{print $1}')
     fi
     if [ "$expected" != "$claimed" ]; then
       fail "chain mismatch at entry starting line $entry_start: expected $expected, got $claimed"
       chain_bad=$((chain_bad + 1))
     fi
-  done < <(grep -nE '^Prev-entry-sha256:' assets/AUDIT-LOG.md | cut -d: -f1 || true)
+  done < <(grep -nE '^Prev-entry-sha256:' "$STATE_ROOT/assets/AUDIT-LOG.md" | cut -d: -f1 || true)
   if [ "$chain_count" -eq 0 ]; then
     note "no chained entries yet (pre-B4 log; will chain on next append)"
   elif [ "$chain_bad" -eq 0 ]; then
@@ -175,9 +191,9 @@ echo
 # 6. Heartbeat sandbox declared
 # ------------------------------------------------------------------
 echo "[6/7] Heartbeat sandbox"
-if [ -f "assets/HEARTBEAT.md" ]; then
+if [ -f "$STATE_ROOT/assets/HEARTBEAT.md" ]; then
   for k in "Sandbox rules" "tool allowlist" "time" "tokens" "Rate"; do
-    if grep -iq "$k" assets/HEARTBEAT.md; then
+    if grep -iq "$k" "$STATE_ROOT/assets/HEARTBEAT.md"; then
       note "sandbox clause: $k"
     else
       warn "HEARTBEAT.md missing clause: $k"
@@ -192,7 +208,7 @@ echo
 # 7. Approvals directory consistency (B1)
 # ------------------------------------------------------------------
 echo "[7/7] Approvals consistency"
-APPROVALS_DIR="assets/approvals"
+APPROVALS_DIR="$STATE_ROOT/assets/approvals"
 if [ ! -d "$APPROVALS_DIR" ]; then
   note "no approvals/ directory (pre-B1 bundle)"
 else
@@ -231,7 +247,7 @@ exit_code=0
 if [ "$findings" -gt 0 ]; then exit_code=2
 elif [ "$warnings" -gt 0 ]; then exit_code=1; fi
 
-if [ -f "assets/AUDIT-LOG.md" ]; then
+if [ -f "$STATE_ROOT/assets/AUDIT-LOG.md" ]; then
   entry=$(cat <<ENTRY
 [$(date -u +%Y-%m-%dT%H:%M:%SZ)] TIER-1 verify-policy.sh
 Reason: routine compliance check
@@ -240,13 +256,13 @@ Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=$findings warnings=$warnings exit=$exit_code
 ENTRY
 )
-  if [ -x "scripts/audit-log-append.sh" ]; then
-    printf '%s\n' "$entry" | scripts/audit-log-append.sh
+  if [ "$STATE_ROOT" = "$POLICY_ROOT" ] && [ -x "$POLICY_ROOT/scripts/audit-log-append.sh" ]; then
+    printf '%s\n' "$entry" | "$POLICY_ROOT/scripts/audit-log-append.sh"
   else
     {
       printf '\n'
       printf '%s\n' "$entry"
-    } >> assets/AUDIT-LOG.md
+    } >> "$STATE_ROOT/assets/AUDIT-LOG.md"
   fi
 fi
 
