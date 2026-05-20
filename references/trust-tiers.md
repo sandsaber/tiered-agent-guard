@@ -230,6 +230,56 @@ def post_tool_use(tool_name, args, result, context):
     append_audit_chained(build_entry(tool_name, args, result))
 ```
 
+### Split-layout invocation (Claude Code plugin)
+
+When the framework code lives in a different filesystem location than the
+mutable per-project state — e.g. the plugin install at
+`~/.claude/plugins/tiered-agent-guard/` and per-project state at
+`$CLAUDE_PROJECT_DIR/.tiered-agent-guard/` — the reference Python hook
+passes split roots to `approve_or_deny`:
+
+```python
+from spa_hooks import approve_or_deny
+import os
+
+def pre_tool_use_split(tool_name, args, context):
+    allow, reason, approval = approve_or_deny(
+        tool_name,
+        args,
+        workspace_root=os.environ["CLAUDE_PROJECT_DIR"],  # path-bounds
+        policy_root=os.environ["CLAUDE_PLUGIN_ROOT"],    # canonical code
+        state_root=os.environ["CLAUDE_PROJECT_DIR"]
+                   + "/.tiered-agent-guard",            # approvals/, AUDIT-LOG, PROPOSALS
+    )
+    if not allow:
+        return DENY(reason=reason)
+    context["pending_consume"] = approval
+    return ALLOW
+```
+
+Split rules:
+
+- `workspace_root` governs `is_inside_workspace` — what counts as "inside
+  the user's project". This is the project directory the agent operates
+  in. Same semantics as the legacy single-root call.
+- `state_root` is where approval artefacts, proposals, and the audit log
+  are read and written. The agent must NOT have write access to
+  `state_root/assets/approvals/`; that path is the sanctioned approval
+  channel.
+- `policy_root` is currently reserved for future allowlist loading
+  (POLICY.md §2.2 in machine-readable form). It is accepted but not
+  consumed in the current revision.
+
+If only `workspace_root` is passed (no kwargs), legacy single-root mode
+is in effect and `state_root` defaults to `workspace_root`. Both the
+single-root and split-root forms exercise the same tier classification
+logic; only approval/proposal/audit lookup paths differ.
+
+The corresponding shell scripts (`security-audit.sh`, `verify-policy.sh`,
+`audit-log-append.sh`) accept matching `--policy-root` and `--state-root`
+flags, with the same partial-flag rejection (exit 3 if exactly one is
+given). Flag parsing is shared via `scripts/lib/split-root-flags.sh`.
+
 ### Post-tool-use hook — append to AUDIT-LOG.md for Tier 1+
 
 ```python

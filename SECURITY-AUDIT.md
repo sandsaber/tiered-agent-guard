@@ -784,6 +784,35 @@ cp /tmp/audit-backup-$$.md assets/AUDIT-LOG.md
 rm /tmp/audit-backup-$$.md
 ```
 
+### Unchained-entry detection harness (verifies post-MVP improvement)
+
+The original chain-tamper harness above catches *modified* chained
+entries. A separate blind spot remained: timestamped entries that were
+appended *without* a `Prev-entry-sha256` line were silently invisible to
+the walker. Closed by extending `verify-policy.sh §5` to scan for
+timestamped blocks lacking a chain link and surface each one as a
+warning (not a finding — these may be legacy from before chaining was
+enforced, which is exactly the case in this repo: 15 entries from
+`2026-04-22T08:50–09:38Z` live unchained in the audit log).
+
+Regression test under `tests/plugin/test_chain_walker_unchained.sh`
+forges a minimal log with one chained + one unchained entry and asserts
+the walker names the unchained timestamp explicitly.
+
+```bash
+./tests/plugin/test_chain_walker_unchained.sh
+# Expect: PASS: chain walker reports unchained entries
+
+./scripts/verify-policy.sh 2>&1 | grep "unchained" | head -3
+# Expect: WARN unchained entry: [2026-04-22T08:50:21Z] TIER-1 security-audit.sh
+#         WARN unchained entry: [2026-04-22T08:50:26Z] TIER-1 verify-policy.sh
+#         ... (15 total)
+```
+
+Unchained entries bump the warnings counter, NOT findings. A *modified*
+chained entry continues to bump findings via the original F-03 path,
+unchanged.
+
 ### End-to-end approval dry-run (verifies B1)
 
 Demonstrates the approval path without executing any action. Not

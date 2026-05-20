@@ -19,16 +19,17 @@ the runtime hooks.
 | `policy.py` | `classify_tier`, shell allowlist enforcement, workspace path guard, `approve_or_deny` |
 | `approvals.py` | `ApprovalRecord`, `find_matching_approval`, TOCTOU guard |
 | `tests/test_vectors.py` | 72 tests: 8 enforcement vectors from `trust-tiers.md`, approval hygiene, obfuscation, allowlist, and shell path guards |
+| `tests/test_split_layout.py` | 7 tests: split-layout API (`policy_root` / `state_root` kwargs), cross-root isolation, `consume()` targeting, classify-tier determinism |
 
 ## Running tests
 
 From the repo root:
 
 ```bash
-python3 -m unittest spa_hooks.tests.test_vectors -v
+python3 -m unittest spa_hooks.tests.test_vectors spa_hooks.tests.test_split_layout -v
 ```
 
-All 72 tests must pass on a clean framework state. Shell tests intentionally cover both blocked patterns and positive Tier 1 allowlist cases, because unknown local commands must default to Tier 2.
+All 79 tests must pass on a clean framework state (72 enforcement vectors + 7 split-layout). Shell tests intentionally cover both blocked patterns and positive Tier 1 allowlist cases, because unknown local commands must default to Tier 2.
 
 ## Integration (Codex / Claude Code / Anthropic SDK)
 
@@ -55,6 +56,47 @@ def post_tool_use(tool_name, args, result, context):
         approval.consume()   # flips consumed_at in assets/approvals/<sha>.approved
     # append_audit_chained(...) goes here; use scripts/audit-log-append.sh
 ```
+
+## Split-layout API (Claude Code plugin)
+
+When a single workspace root is not the right model — e.g. a Claude Code
+plugin installed under `~/.claude/plugins/tiered-agent-guard/` (read-only
+canonical code) but per-project mutable state living under
+`$CLAUDE_PROJECT_DIR/.tiered-agent-guard/` — `approve_or_deny` and
+`find_matching_approval` accept keyword-only `policy_root` and
+`state_root` kwargs:
+
+```python
+from spa_hooks import approve_or_deny
+import os
+
+allow, reason, approval = approve_or_deny(
+    "bash",
+    {"command": cmd},
+    workspace_root=os.environ["CLAUDE_PROJECT_DIR"],  # path-bounds: "inside workspace?"
+    policy_root=os.environ["CLAUDE_PLUGIN_ROOT"],    # canonical POLICY.md, scripts/, etc.
+    state_root=os.environ["CLAUDE_PROJECT_DIR"] + "/.tiered-agent-guard",  # AUDIT-LOG, approvals/, PROPOSALS
+)
+```
+
+Semantic rule:
+
+| Resource | Resolved from |
+|---|---|
+| Path-bounds check (`is_inside_workspace`) | `workspace_root` |
+| `assets/approvals/<sha>.approved` lookup | `state_root` (falls back to `workspace_root` in legacy mode) |
+| `assets/PROPOSALS.md` lookup | `state_root` (same fallback) |
+| Future allowlist files | `policy_root` (reserved; currently unused) |
+
+Legacy single-root mode (one positional `workspace_root`, no kwargs) is
+supported for the entire `0.x` series with no current removal date. The
+72 enforcement vectors in `tests/test_vectors.py` run in legacy mode and
+must stay green.
+
+After calling `approval.consume()` under split layout, the `.approved`
+file at `state_root/assets/approvals/<sha>.approved` is updated — NOT
+anything under `workspace_root` or `policy_root`. This is locked by
+`tests/test_split_layout.py::ConsumeTargetsStateRootTests`.
 
 ## What's NOT here
 
