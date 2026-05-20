@@ -28,6 +28,7 @@ cp -r "$ROOT/assets/approvals/."     "$STATE_ROOT/assets/approvals/"
 # A drift warning against scripts/security-audit.sh is expected until the
 # matching POLICY-APPROVED entry is recorded in a later phase, so warnings
 # tier is treated as acceptance here.
+chain_before_audit="$(grep -c '^Prev-entry-sha256:' "$STATE_ROOT/assets/AUDIT-LOG.md" || true)"
 set +e
 "$POLICY_ROOT/scripts/security-audit.sh" \
     --policy-root "$POLICY_ROOT" \
@@ -49,8 +50,14 @@ if ! grep -q "security-audit.sh" "$STATE_ROOT/assets/AUDIT-LOG.md"; then
     exit 1
 fi
 
+# Chain integrity: the append MUST have computed a new Prev-entry-sha256 line.
+chain_after_audit="$(grep -c '^Prev-entry-sha256:' "$STATE_ROOT/assets/AUDIT-LOG.md" || true)"
+[ "$chain_after_audit" -gt "$chain_before_audit" ] \
+  || { echo "FAIL: security-audit.sh did not extend the audit chain (before=$chain_before_audit, after=$chain_after_audit)"; exit 1; }
+
 echo "PASS: security-audit.sh accepted split roots (exit=$rc)"
 
+chain_before_verify="$(grep -c '^Prev-entry-sha256:' "$STATE_ROOT/assets/AUDIT-LOG.md" || true)"
 set +e
 "$POLICY_ROOT/scripts/verify-policy.sh" \
     --policy-root "$POLICY_ROOT" \
@@ -70,5 +77,10 @@ if ! grep -q "verify-policy.sh" "$STATE_ROOT/assets/AUDIT-LOG.md"; then
     cat "$TMP/verify.out" >&2
     exit 1
 fi
+
+# Chain integrity: same assertion for verify-policy.sh.
+chain_after_verify="$(grep -c '^Prev-entry-sha256:' "$STATE_ROOT/assets/AUDIT-LOG.md" || true)"
+[ "$chain_after_verify" -gt "$chain_before_verify" ] \
+  || { echo "FAIL: verify-policy.sh did not extend the audit chain (before=$chain_before_verify, after=$chain_after_verify)"; exit 1; }
 
 echo "PASS: verify-policy.sh accepted split roots (exit=$VERIFY_RC)"

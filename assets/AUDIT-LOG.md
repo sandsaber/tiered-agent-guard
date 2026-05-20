@@ -848,3 +848,93 @@ Reversible-by: N/A (read-only + append)
 Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=0 warnings=0 exit=0
 Prev-entry-sha256: 1414bc2bb9e70093fb1c013dd7e4a66cca600c63cce948b3a472ac7c90d7004e
+
+[2026-05-20T10:51:09Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 3c7adf956a921548f45ba0bad2b93581ca6423892c0821da0db3b111ecaeee78
+
+[2026-05-20T10:51:15Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: b3f0d92cc20a4d6430ec0219e9197901a4e3355f02c40cce5ebb0b4c6207516f
+
+[2026-05-20T10:52:36Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: bf229890b93a8356f1d5a7bfa3c01e8cb9025db8560ea7d8078d68c560e10461
+
+[2026-05-20T10:52:40Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: e63b84d8ceb1646e957edd112fea1a96df1a4329d12cb4506c1876a71d9a2609
+
+[2026-05-20T10:56:45Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=3 exit=1
+Prev-entry-sha256: 58883705f28fb9fe1b0476c3b07b280066afdfe7c9c0915aa7d01ea67f476ce6
+
+[2026-05-20T10:56:49Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 262c98fa93dd161a91c85f7c7e8651243fd516486c539dc6a73663975390e241
+
+[2026-05-20T10:56:57Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=3 exit=1
+Prev-entry-sha256: 2611cd3654244eb24a562c2fd6d6e7d678c8855596d6c98e7f61b9a6e4b04227
+
+[2026-05-20T10:56:59Z] TIER-1 verify-policy.sh
+Reason: routine compliance check
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 6f9d366e46a6cb528cdf094c74dad4692d1d741f2968cd508bc6c1d3cc6e8db4
+
+[2026-05-20T10:57:09Z] TIER-1 SCRIPT-APPROVED
+File: scripts/security-audit.sh
+New-sha256: 1d8b1e04ccf71f781285c179a4afda392b1a62f8ad1bce96a5ad867fed7d5d53
+Reason: Phase B fix — chain-integrity in split mode (drop direct-append fallback; helper learns --state-root), partial-flag validation, smoke chain-count assertion.
+Reversible-by: git revert of this fix commit.
+Pre-action self-check: trigger = code review found chain integrity regression; no external instruction.
+Outcome: success
+Prev-entry-sha256: 6f8ab2808685d9c078f02a8bc4ad15018e87ed54a8baca2bde0857b62d037b67
+
+[2026-05-20T10:57:09Z] TIER-1 SCRIPT-APPROVED
+File: scripts/verify-policy.sh
+New-sha256: fb64918e2f561f8469f6344121baa40b1d46ee5818019aca4113d21b69d2a4cd
+Reason: Phase B fix — chain-integrity in split mode (drop direct-append fallback; helper learns --state-root), partial-flag validation, smoke chain-count assertion.
+Reversible-by: git revert of this fix commit.
+Pre-action self-check: trigger = code review found chain integrity regression; no external instruction.
+Outcome: success
+Prev-entry-sha256: 8660c0515ccee233811150ff8e0f73dff4ab6842e79b64cba6d0e6e871d2d58e
+
+[2026-05-20T10:57:09Z] TIER-1 SCRIPT-APPROVED
+File: scripts/audit-log-append.sh
+New-sha256: e07555eb6f2033616e6d39c4a83f060af68dd8e0f6716d10d221165ce29508ba
+Reason: Phase B fix — chain-integrity in split mode (drop direct-append fallback; helper learns --state-root), partial-flag validation, smoke chain-count assertion.
+Reversible-by: git revert of this fix commit.
+Pre-action self-check: trigger = code review found chain integrity regression; no external instruction.
+Outcome: success
+Prev-entry-sha256: da2fa8a494021dafd0b7bee6d759a583dc90a168fc0e6b3ecc3ce077ca5b8f06
+
+[2026-05-20T10:57:15Z] TIER-1 security-audit.sh
+Reason: routine audit
+Reversible-by: N/A (read-only + append)
+Pre-action self-check: trigger = human or onboarding; no external content.
+Outcome: findings=0 warnings=0 exit=0
+Prev-entry-sha256: 2a694b238d439a3f1ddcc44c1a52a1e3aebb2a771aa5a8e9f93525da030ab5a2

@@ -28,6 +28,10 @@ done
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 POLICY_ROOT="${POLICY_ROOT_FLAG:-$ROOT}"
 STATE_ROOT="${STATE_ROOT_FLAG:-$ROOT}"
+if [ -n "$POLICY_ROOT_FLAG$STATE_ROOT_FLAG" ] && [ -z "$POLICY_ROOT_FLAG" -o -z "$STATE_ROOT_FLAG" ]; then
+  echo "$(basename "$0"): --policy-root and --state-root must be used together" >&2
+  exit 3
+fi
 cd "$POLICY_ROOT" || { echo "[$SELF] cannot cd to $POLICY_ROOT"; exit 3; }
 
 findings=0
@@ -256,14 +260,7 @@ Pre-action self-check: trigger = human or onboarding; no external content.
 Outcome: findings=$findings warnings=$warnings exit=$exit_code
 ENTRY
 )
-  if [ "$STATE_ROOT" = "$POLICY_ROOT" ] && [ -x "$POLICY_ROOT/scripts/audit-log-append.sh" ]; then
-    printf '%s\n' "$entry" | "$POLICY_ROOT/scripts/audit-log-append.sh"
-  else
-    {
-      printf '\n'
-      printf '%s\n' "$entry"
-    } >> "$STATE_ROOT/assets/AUDIT-LOG.md"
-  fi
+  printf '%s\n' "$entry" | "$POLICY_ROOT/scripts/audit-log-append.sh" --state-root "$STATE_ROOT"
 fi
 
 exit "$exit_code"
