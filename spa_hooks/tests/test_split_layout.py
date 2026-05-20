@@ -97,10 +97,12 @@ class ApproveOrDenySplitLayoutTests(unittest.TestCase):
             self.assertIsNotNone(rec)
 
 
-class PathTraversalDefenseTests(unittest.TestCase):
-    def test_state_root_with_dotdot_does_not_reach_policy_root(self):
-        """If a caller passes state_root='/x/.tiered-agent-guard/../..' it must not
-        suddenly find approvals living under policy_root."""
+class CrossRootIsolationTests(unittest.TestCase):
+    def test_state_root_without_assets_does_not_inherit_policy_root_approvals(self):
+        """An approval located in policy_root must NOT authorise a Tier 2 action
+        when state_root is a legitimate, distinct directory that has no approvals.
+        This pins the documented split: approvals are looked up under state_root,
+        full stop — there is no automatic search of any other root."""
         with TemporaryDirectory() as base:
             base_path = Path(base)
             policy_root = base_path / "plugin"
@@ -122,9 +124,35 @@ class PathTraversalDefenseTests(unittest.TestCase):
             self.assertIsNone(rec)
 
 
-class TierParityTests(unittest.TestCase):
-    """Tier classification must be identical in legacy and split modes."""
-    PARITY_VECTORS = [
+class ConsumeTargetsStateRootTests(unittest.TestCase):
+    def test_consume_writes_to_state_root_not_workspace_or_policy(self):
+        """After a Tier 2 allow, calling rec.consume() must update the .approved
+        file that lives under state_root, leaving any unrelated approvals in
+        other roots untouched."""
+        with TemporaryDirectory() as policy_dir, TemporaryDirectory() as state_dir:
+            policy_root = Path(policy_dir)
+            state_root = Path(state_dir)
+            sha = _write_proposal_and_approval(state_root, "rm consume-test")
+            allow, _, rec = approve_or_deny(
+                "bash",
+                {"command": "rm consume-test"},
+                workspace_root=str(policy_root),
+                policy_root=str(policy_root),
+                state_root=str(state_root),
+            )
+            self.assertTrue(allow)
+            self.assertIsNotNone(rec)
+            rec.consume()
+            approval_file = state_root / "assets" / "approvals" / f"{sha}.approved"
+            text = approval_file.read_text()
+            self.assertNotIn("consumed_at: null", text)
+            self.assertRegex(text, r"consumed_at:\s*\d{4}-\d{2}-\d{2}T")
+
+
+class ClassifyTierDeterminismTests(unittest.TestCase):
+    """classify_tier is pure and root-free: same input always yields same tier,
+    regardless of any layout mode. Documents what we rely on for legacy/split parity."""
+    VECTORS = [
         ("bash", {"command": "ls"}),
         ("bash", {"command": "git status"}),
         ("bash", {"command": "rm foo"}),
@@ -134,14 +162,11 @@ class TierParityTests(unittest.TestCase):
         ("write_file", {"path": "POLICY.md"}),
     ]
 
-    def test_classification_identical(self):
+    def test_classify_tier_is_deterministic(self):
         from spa_hooks import classify_tier
-        for tool, args in self.PARITY_VECTORS:
+        for tool, args in self.VECTORS:
             with self.subTest(tool=tool, args=args):
-                # classify_tier does not take any root — it's pure.
-                t = classify_tier(tool, args)
-                # Re-call to ensure determinism.
-                self.assertEqual(t, classify_tier(tool, args))
+                self.assertEqual(classify_tier(tool, args), classify_tier(tool, args))
 
 
 if __name__ == "__main__":

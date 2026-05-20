@@ -119,6 +119,8 @@ def find_matching_approval(
             continue
         if _older_than_days(rec.approved_at, APPROVAL_MAX_AGE_DAYS, now_iso):
             continue
+        # TOCTOU guard — the proposal body must still hash to proposal_sha256
+        # at lookup time; otherwise it has been edited since approval.
         body = extract_proposal_body(proposals_text, rec.proposal_sha256)
         if body is None:
             continue

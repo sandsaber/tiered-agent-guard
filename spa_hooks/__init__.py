@@ -7,9 +7,9 @@ that offers a pre-tool-use hook.
 Public API:
     classify_tier(tool_name, args) -> int
     is_inside_workspace(path, workspace_root) -> bool
-    approve_or_deny(tool_name, args, workspace_root) -> (allow, reason, approval?)
+    approve_or_deny(tool_name, args, workspace_root, *, policy_root=None, state_root=None) -> (allow, reason, approval?)
     ApprovalRecord
-    find_matching_approval(subject, workspace_root) -> ApprovalRecord | None
+    find_matching_approval(subject, workspace_root, now_iso=None, *, state_root=None) -> ApprovalRecord | None
 
 Typical integration (pseudocode):
 
