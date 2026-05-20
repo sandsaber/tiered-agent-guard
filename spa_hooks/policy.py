@@ -396,8 +396,19 @@ def approve_or_deny(
     tool_name: str,
     args: dict,
     workspace_root: str,
+    *,
+    policy_root: Optional[str] = None,
+    state_root: Optional[str] = None,
 ) -> Tuple[bool, str, Optional[ApprovalRecord]]:
     """Decide whether to allow a tool call.
+
+    Path-bounds checks ("inside workspace?") always use workspace_root —
+    that is the project root the agent operates in. Approval/proposal
+    lookups use state_root when provided (split layout), else fall back
+    to workspace_root (legacy single-root mode).
+
+    policy_root is accepted for forward compatibility (future allowlist
+    files may load from there); it is unused in this revision.
 
     Returns:
         (allow, reason, approval): approval is non-None only on a Tier 2
@@ -430,7 +441,11 @@ def approve_or_deny(
     else:
         subject = tool_name
 
-    rec = find_matching_approval(subject, workspace_root)
+    rec = find_matching_approval(
+        subject,
+        workspace_root,
+        state_root=state_root,
+    )
     if rec is None:
         return (False, f"Tier 2 {tool_name} without valid approval: {subject}", None)
     return (True, "Tier 2 with valid approval", rec)

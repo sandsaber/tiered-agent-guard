@@ -98,9 +98,15 @@ def find_matching_approval(
     subject: str,
     workspace_root: str,
     now_iso: Optional[str] = None,
+    *,
+    state_root: Optional[str] = None,
 ) -> Optional[ApprovalRecord]:
-    """Locate a valid, unconsumed approval whose proposal body mentions subject."""
-    root = Path(workspace_root)
+    """Locate a valid, unconsumed approval whose proposal body mentions subject.
+
+    If state_root is provided, approvals/ and PROPOSALS.md are read from there
+    (split-layout mode). Otherwise workspace_root is used for both (legacy).
+    """
+    root = Path(state_root) if state_root is not None else Path(workspace_root)
     approvals_dir = root / "assets" / "approvals"
     proposals_path = root / "assets" / "PROPOSALS.md"
     if not approvals_dir.is_dir() or not proposals_path.exists():
@@ -109,17 +115,13 @@ def find_matching_approval(
 
     for approval_file in sorted(approvals_dir.glob("*.approved")):
         rec = ApprovalRecord.from_file(approval_file)
-        # 1. Single-use + consumed
         if rec.single_use and rec.consumed_at is not None:
             continue
-        # 2. Age
         if _older_than_days(rec.approved_at, APPROVAL_MAX_AGE_DAYS, now_iso):
             continue
-        # 3. TOCTOU — body still hashes to proposal_sha256
         body = extract_proposal_body(proposals_text, rec.proposal_sha256)
         if body is None:
             continue
-        # 4. Subject appears in body
         if subject not in body:
             continue
         return rec
