@@ -10,23 +10,23 @@ boundaries.
 
 > **Status: proof-of-concept.** The design, controls, and reference
 > implementation are in place and self-tested (72 unit tests, hash-chain
-> integrity, drift checks). Quantitative benchmarks — latency overhead per
+> integrity, drift checks). Quantitative benchmarks (latency overhead per
 > tool call, false-positive/false-negative rates on injection corpora,
-> attack-vector coverage against published agent red-team suites — are
+> attack-vector coverage against published agent red-team suites) are
 > **in progress** and not yet published. Treat this as a starting point
 > for integration and study, not a drop-in production guarantee.
 
 > This is a **policy framework**, not a classifier model. For classifier-based
 > prompt-injection defence see Llama Guard 3, ShieldGemma, or Granite Guardian.
-> This framework operates at a different layer — action authorisation and audit
-> — and **can be combined with** any of those classifiers at the appropriate
+> This framework operates at a different layer (action authorisation and audit)
+> and **can be combined with** any of those classifiers at the appropriate
 > point in your stack.
 
 A typed three-tier action model with a working reference implementation of the
 enforcement hooks. The agent is free to **think, draft, propose, rehearse, and
 notice** inside its workspace. It is never free to **reach, send, push, install,
 overwrite, or delete** without an explicit, per-action human approval. That
-boundary is enforced mechanically — not by prose exhortation.
+boundary is enforced mechanically, not by prose exhortation.
 
 > **The shipping principle:** safety is achieved by *what the agent cannot do
 > without approval*, not by *what we ask the agent nicely not to do*.
@@ -42,7 +42,7 @@ You should look at this framework if you are:
   calls, tool execution) and want to constrain those actions to a
   verified-approval workflow.
 - Worried about prompt-injection attacks reaching destructive operations.
-- Looking for a permission model stronger than allow/deny lists — one with
+- Looking for a permission model stronger than allow/deny lists, one with
   cryptographic approval artefacts, single-use tokens, and TOCTOU guards.
 - Operating under a compliance regime where every agent action must be
   auditable and traceable.
@@ -69,7 +69,7 @@ action surface with mechanical controls that a runtime must wire in.
 
 - [x] **Typed three-tier action model.** Every action is Tier 0 (ambient), Tier 1 (logged + reversible), or Tier 2 (approval required). Default on ambiguity: Tier 2.
 - [x] **Agent-unwritable approval artefacts.** `assets/approvals/<sha>.approved` is the single sanctioned approval channel. Agent has no write-access; only `scripts/approve-proposal.sh` (TTY-gated) can create them.
-- [x] **TOCTOU-guarded approval execution.** At execution time, the current proposal body must still hash to `proposal_sha256` — otherwise the approval is invalid.
+- [x] **TOCTOU-guarded approval execution.** At execution time, the current proposal body must still hash to `proposal_sha256`. Otherwise the approval is invalid.
 - [x] **Single-use approvals.** After execution, `consumed_at` is flipped; replay is blocked.
 - [x] **14-day approval expiry.** Stale approvals auto-move to `approvals/expired/`.
 - [x] **Hash-chained audit log.** Every entry pins the SHA-256 of prior file content. In-place edits are detectable by a chain walker (`verify-policy.sh §5`).
@@ -112,7 +112,7 @@ chain-integrity tripwires.
 
 ### Designed for: proactive agents (example use case)
 
-The framework was originally built to constrain a proactive agent — one that
+The framework was originally built to constrain a proactive agent, one that
 *notices, drafts, proposes, and surfaces ideas* on its own. That use case
 shapes the design (output-bound side effects, draft-but-don't-send, near-miss
 log, heartbeats that file proposals rather than execute), but the framework
@@ -121,17 +121,17 @@ tool-using agent and the controls above apply.
 
 The installable proactive-agent template lives under `assets/` (`AGENTS.md`,
 `HEARTBEAT.md`, `memory/`) and inherits the upstream
-`halthelobster/proactive-agent` v3.1.0 patterns — reverse prompting, pattern
+`halthelobster/proactive-agent` v3.1.0 patterns: reverse prompting, pattern
 detection at N≥3, draft-but-don't-send, surprise queue, open-question journal,
 near-miss log, red-team self-check, alignment pulse, attention-debt tracker,
 pre-computed context, self-critique, sandboxed heartbeats. Use them, swap
-them, or drop them — the security controls do not depend on them.
+them, or drop them. The security controls do not depend on them.
 
 ### Memory & continuity
 
 - [x] **WAL protocol.** Critical details (corrections, proper nouns, preferences, decisions, specific values) are written to `SESSION-STATE.md` **before** the agent composes its response. Survives single-turn memory loss.
-- [x] **Working buffer.** At 60 % context, every subsequent exchange is appended to `memory/working-buffer.md` verbatim — survives compaction.
-- [x] **Compaction recovery.** On resume, the agent reads the buffer *first*. It never asks "where were we?" — the buffer answers.
+- [x] **Working buffer.** At 60 % context, every subsequent exchange is appended to `memory/working-buffer.md` verbatim. Survives compaction.
+- [x] **Compaction recovery.** On resume, the agent reads the buffer *first*. It never asks "where were we?". The buffer answers.
 - [x] **Three-tier memory.** Raw daily notes → `SESSION-STATE.md` (active) → `memory/YYYY-MM-DD.md` (daily archive) → `MEMORY.md` (distilled durable lessons).
 - [x] **Curated surprise dismissal.** Ideas the human rejected stay flagged in the queue so the agent doesn't re-propose in a month.
 
@@ -180,7 +180,7 @@ audit purposes):
 
 We removed the "don't ask permission" framing entirely and replaced the
 permission model with a **typed, three-tier system** in which every action's
-authority is unambiguous. Proactivity is preserved — but relocated into
+authority is unambiguous. Proactivity is preserved, but relocated into
 *noticing more, drafting more, proposing more, surfacing more*, with every
 side-effect gated by a separate approval step.
 
@@ -224,15 +224,15 @@ detection, and verify-before-reporting.
 
 The repository has three conceptual layers:
 
-- **Framework core** — `POLICY.md`, `scripts/`, `spa_hooks/`. This is what
+- **Framework core**: `POLICY.md`, `scripts/`, `spa_hooks/`. This is what
   enforces the policy at runtime. It has no dependency on any particular
   agent and is enough on its own if you wire it into your own tool-using
   agent.
-- **Installable agent template** — everything under `assets/`. An example
+- **Installable agent template**: everything under `assets/`. An example
   proactive-agent workspace (identity, operating rules, heartbeats, memory
   layout) that the core was originally built to guard. Useful as a reference
   and a working starting point; not required.
-- **Adapters and references** — root `AGENTS.md` and `SKILL.md` (Codex /
+- **Adapters and references**: root `AGENTS.md` and `SKILL.md` (Codex /
   OpenClaw integration entrypoints), `README.md`, `SECURITY-AUDIT.md`, and
   `references/` (threat model, trust-tier spec, prompt-injection vectors).
 
@@ -256,7 +256,7 @@ The repository has three conceptual layers:
 │   ├── PROPOSALS.md            Draft-but-don't-send queue (Tier 0 writable)
 │   ├── PATTERNS.md             Pattern ledger
 │   ├── AUDIT-LOG.md            Append-only, hash-chained action log
-│   ├── approvals/              Tier-2 approval artefacts — agent CANNOT write
+│   ├── approvals/              Tier-2 approval artefacts (agent CANNOT write)
 │   │   └── README.md
 │   └── memory/
 │       ├── working-buffer.md   Danger-zone log (60 % context onwards)
@@ -314,8 +314,8 @@ python3 -m unittest spa_hooks.tests.test_vectors    # 72 tests, all green
 
 If you integrate this framework so that per-project state (audit log,
 approval artefacts, proposals, memory) lives inside the user's own git
-repository — for example under `.tiered-agent-guard/` once the Claude
-Code plugin ships, or under any other path you choose for vendor-mode —
+repository (for example under `.tiered-agent-guard/` once the Claude
+Code plugin ships, or under any other path you choose for vendor-mode):
 **add that path to `.gitignore` before the first agent session runs**.
 Otherwise:
 
@@ -337,7 +337,7 @@ A typical line in `.gitignore`:
 Point the agent at `assets/ONBOARDING.md`. The onboarding flow:
 
 1. Asks five onboarding questions in one batched message (Tier 0).
-2. **Validates** each answer — rejects injection markers, caps at 200
+2. **Validates** each answer: rejects injection markers, caps at 200
    chars, refuses to record entries that would weaken the policy
    ("always allow X", "skip approval for Y") into the `USER.md`
    hard-refusal field.
@@ -351,13 +351,13 @@ Point the agent at `assets/ONBOARDING.md`. The onboarding flow:
 
 ## Daily workflow
 
-### Ambient (Tier 0) — the agent just works
+### Ambient (Tier 0): the agent just works
 
 Reading workspace files, drafting into `PROPOSALS.md` and `memory/*`,
 counting patterns in `PATTERNS.md`, writing WAL notes to
 `SESSION-STATE.md`. No approval, no logging overhead.
 
-### Logged (Tier 1) — short audit entry, then proceed
+### Logged (Tier 1): short audit entry, then proceed
 
 Editing operating files (`USER.md`, `MEMORY.md`, `HEARTBEAT.md`,
 `ONBOARDING.md`, `TOOLS.md`), running allowlisted
@@ -365,13 +365,13 @@ commands (`ls`, `grep`, `git status`, tests, static checkers). The
 agent appends a `TIER-1` entry to `AUDIT-LOG.md` via
 `scripts/audit-log-append.sh` **before** acting.
 
-### Approval-gated (Tier 2) — draft, approve, execute (three separate steps)
+### Approval-gated (Tier 2): draft, approve, execute (three separate steps)
 
-**Step 1 — Agent drafts.** A proposal goes into `assets/PROPOSALS.md`
+**Step 1: Agent drafts.** A proposal goes into `assets/PROPOSALS.md`
 with `Status: pending-review`. This is a Tier 0 write; the agent does
 it freely.
 
-**Step 2 — Human approves.** The human runs, in a terminal:
+**Step 2: Human approves.** The human runs, in a terminal:
 
 ```bash
 ./scripts/approve-proposal.sh
@@ -384,13 +384,13 @@ writes `assets/approvals/<proposal-sha>.approved` (agent has no write
 access there) and appends a TIER-2 `approval-granted` entry to
 `AUDIT-LOG.md` via the chain helper.
 
-**Step 3 — Executor runs the action.** A separate step (a runtime
+**Step 3: Executor runs the action.** A separate step (a runtime
 hook, a helper script, or the human manually) verifies:
 
 - A matching `<sha>.approved` file exists.
 - `single_use: true` and `consumed_at: null`.
 - `approved_at` is within the 14-day window.
-- The proposal body still hashes to `proposal_sha256` (TOCTOU guard —
+- The proposal body still hashes to `proposal_sha256` (TOCTOU guard,
   the proposal may have been edited since approval).
 
 Then it runs the action, flips `consumed_at` to the current timestamp,
@@ -408,14 +408,14 @@ task," no session-level approval.
 
 | Tier | Examples | Required ceremony |
 |------|----------|-------------------|
-| 0 — ambient | read files, write `PROPOSALS.md`, write `memory/*`, think | none |
-| 1 — logged, reversible | edit `USER.md`, run `ls`, run `git status`, run tests | append a TIER-1 entry to `AUDIT-LOG.md` before acting |
-| 2 — approval-gated | network, deletion, git push, package install, edit `POLICY.md`/`SOUL.md`/`SKILL.md`, send message, spawn privileged sub-agent | `<sha>.approved` artefact + TIER-2 audit entry + separate execution step |
+| 0 (ambient) | read files, write `PROPOSALS.md`, write `memory/*`, think | none |
+| 1 (logged, reversible) | edit `USER.md`, run `ls`, run `git status`, run tests | append a TIER-1 entry to `AUDIT-LOG.md` before acting |
+| 2 (approval-gated) | network, deletion, git push, package install, edit `POLICY.md`/`SOUL.md`/`SKILL.md`, send message, spawn privileged sub-agent | `<sha>.approved` artefact + TIER-2 audit entry + separate execution step |
 
 If the agent cannot unambiguously classify an action, it defaults to
 Tier 2.
 
-### Approval artefacts — not status flags
+### Approval artefacts, not status flags
 
 Earlier drafts of this design had `Status: approved` as a string inside
 `PROPOSALS.md`. The agent has Tier 0 write access to that file, which
@@ -459,7 +459,7 @@ Three layers, all documented in
    instructions.
 2. **Heuristic screening.** Any content flagged by
    `scripts/injection-scan.sh` (see the pattern list there) is
-   quarantined — moved into `assets/memory/quarantine/<ts>-<name>.md`,
+   quarantined, moved into `assets/memory/quarantine/<ts>-<name>.md`,
    the original file replaced with a stub pointer.
 3. **Tier escalation.** Before any Tier 1+ action, the agent asks
    itself whether the trigger traces back to external content. If
@@ -467,7 +467,7 @@ Three layers, all documented in
    injection origin.
 
 Seven named heartbeats complete the picture
-([`assets/HEARTBEAT.md`](assets/HEARTBEAT.md)) — memory freshener,
+([`assets/HEARTBEAT.md`](assets/HEARTBEAT.md)): memory freshener,
 pattern detector, proactive tracker, attention-debt scan, alignment
 audit, injection sweep, and policy-drift check, plus proposal
 expiration. Heartbeats file proposals, never execute.
@@ -496,7 +496,7 @@ expiration. Heartbeats file proposals, never execute.
 | `approve-proposal.sh` | Interactive, TTY-gated. Lists pending proposals, requires human to type `yes`, writes `<sha>.approved`, logs TIER-2 approval-granted entry | Tier 2 (and cannot be run non-interactively) |
 | `injection-scan.sh` | Standalone scanner for high/medium-confidence injection markers. `--sweep` scans the default memory set. `--quarantine <file>` auto-moves the content to `memory/quarantine/` and replaces the original with a stub | Tier 1 |
 
-### Python reference implementation — `spa_hooks/`
+### Python reference implementation: `spa_hooks/`
 
 A stdlib-only Python package that implements the runtime hook contract:
 
@@ -529,15 +529,15 @@ Covered by `spa_hooks/tests/test_vectors.py`:
 
 ### Documentation (`references/`)
 
-- `trust-tiers.md` — decision flowchart + pre/post/session/spawn hook
+- `trust-tiers.md`: decision flowchart + pre/post/session/spawn hook
   pseudocode + 9 enforcement test vectors.
-- `threat-model.md` — STRIDE breakdown mapped to mitigations in
+- `threat-model.md`: STRIDE breakdown mapped to mitigations in
   `POLICY.md`.
-- `prompt-injection.md` — three-layer defence + 7 canonical test
+- `prompt-injection.md`: three-layer defence + 7 canonical test
   vectors (V1 direct injection, V2 spoofed system message, V3 mixed
   content, V4 authority impersonation, V5 Tier 2 via framing, V6
   heartbeat near-miss, V7 nested file reference).
-- `comparison-with-v3.md` — file-by-file diff against upstream v3.1.0,
+- `comparison-with-v3.md`: file-by-file diff against upstream v3.1.0,
   with the verbatim quotations of the contradictions we removed.
 
 ---
@@ -556,15 +556,15 @@ python3 -m unittest spa_hooks.tests.test_vectors    # must be green
 
 The audit document includes reproducible harnesses for:
 
-- **F-01 drift-check** — inject a fake `POLICY-APPROVED` entry with a
+- **F-01 drift-check**: inject a fake `POLICY-APPROVED` entry with a
   bogus SHA for one file; the script must flag `differs from last
   approved` for that file only and leave the others reporting `no
   prior approval`.
-- **F-03 chain-tamper** — change one character inside a chained entry;
+- **F-03 chain-tamper**: change one character inside a chained entry;
   the subsequent entry's `Prev-entry-sha256` must no longer match, and
   `verify-policy.sh §5` must report `chain mismatch` with the exact
   line number.
-- **B1 approval dry-run** — not automated (TTY-gated by design). See
+- **B1 approval dry-run**: not automated (TTY-gated by design). See
   §9 of the audit for the step-by-step.
 
 ---
@@ -573,9 +573,9 @@ The audit document includes reproducible harnesses for:
 
 - **MVP tool coverage is Bash-only (forthcoming Claude Code plugin).**
   The in-progress Claude Code plugin's PreToolUse / PostToolUse hooks
-  intercept the `Bash` tool only. Other Claude Code tools — `Write`,
+  intercept the `Bash` tool only. Other Claude Code tools, including `Write`,
   `Edit`, `WebFetch`, `WebSearch`, `Task` (sub-agent spawn), and
-  `mcp__*` (MCP server tools) — are NOT gated by the plugin's
+  `mcp__*` (MCP server tools), are NOT gated by the plugin's
   mechanical hooks in MVP. Agents using those tools fall back to prose
   enforcement (POLICY.md) plus whatever the underlying runtime
   provides (e.g. Claude Code's built-in permission prompts).
@@ -588,16 +588,16 @@ The audit document includes reproducible harnesses for:
 - **Regex-based command matching is not a complete shell parser.**
   F-21 (quote/escape) and F-22 (compressed interpreter flags) were
   closed via shlex tokenisation and extended patterns. More exotic
-  obfuscation — variable expansion (`bash${IFS}-c`), process
-  substitution, command substitution — is harder to catch with regex
+  obfuscation, including variable expansion (`bash${IFS}-c`), process
+  substitution, and command substitution, is harder to catch with regex
   alone. The defence in depth is **approval per shell call** plus
-  **audit-chain traceability** — even if an obfuscated call slips
+  **audit-chain traceability**. Even if an obfuscated call slips
   through the regex, it still gets logged, and the audit trail allows
   the human to notice.
 - **The framework is not self-enforcing.** It declares a policy and ships
   a reference implementation, but the runtime is responsible for
   invoking the hooks. If you wire only the file-layout and skip
-  `spa_hooks`, the agent falls back to prose enforcement — which is
+  `spa_hooks`, the agent falls back to prose enforcement, which is
   weaker than hooks.
 - **POLICY.md's `find -type f -readable` was replaced with
   portable `find -type f`** (F-15). macOS BSD find does not support
@@ -642,7 +642,7 @@ Live state after the last run:
 **MIT-0.** No warranty. Use freely, modify, redistribute, no
 attribution required. The upstream is MIT-0 and we preserve that.
 
-**Upstream.** `halthelobster/proactive-agent` v3.1.0 by Hal Labs — the
+**Upstream.** `halthelobster/proactive-agent` v3.1.0 by Hal Labs. The
 proactivity patterns that still carry the agent's weight (WAL,
 working buffer, compaction recovery, three-tier memory, reverse
 prompting, pattern detection, verify-before-reporting) were their
@@ -657,7 +657,7 @@ for audit purposes.
 **Security-audit methodology.** See
 [`SECURITY-AUDIT.md`](SECURITY-AUDIT.md) for the full audit trail.
 Two things we would recommend to any downstream maintainer: (1) run
-a self-re-audit after every significant new-code phase — F-21, F-22, and
+a self-re-audit after every significant new-code phase. F-21, F-22, and
 F-23 were discovered this way; (2) trust mechanical enforcement over prose
 and back runtime hooks with behavioral tests, because the highest-impact
 findings were gaps between the policy contract and executable checks.
